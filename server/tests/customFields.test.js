@@ -49,6 +49,16 @@ describe('Custom Field Controller', () => {
     });
     objectId = customObj._id;
 
+    // Create default name field
+    await CustomField.create({
+      object: objectId,
+      name: 'name',
+      label: 'Name',
+      type: 'Text',
+      required: true,
+      order: 0,
+    });
+
     // Login as admin
     const response = await request(app)
       .post('/api/auth/login')
@@ -79,7 +89,7 @@ describe('Custom Field Controller', () => {
     });
 
     it('should create different field types', async () => {
-      const types = ['Text', 'Number', 'Date', 'Checkbox', 'Email'];
+      const types = ['Text', 'Number', 'Date', 'Boolean', 'Email'];
 
       for (const type of types) {
         const response = await request(app)
@@ -112,7 +122,7 @@ describe('Custom Field Controller', () => {
 
       expect(response.status).toBe(200);
       expect(response.body.success).toBe(true);
-      expect(response.body.data.length).toBe(3); // 2 created + default name field
+      expect(response.body.data.length).toBe(3); // 2 created + default name field from customObject creation
     });
   });
 
