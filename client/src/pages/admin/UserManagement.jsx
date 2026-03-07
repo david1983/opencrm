@@ -8,9 +8,11 @@ export default function UserManagement() {
   const [search, setSearch] = useState('');
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
   const [formData, setFormData] = useState({});
   const [newPassword, setNewPassword] = useState('');
+  const [newUserData, setNewUserData] = useState({ name: '', email: '', password: '', role: 'user' });
 
   const queryClient = useQueryClient();
 
@@ -44,6 +46,15 @@ export default function UserManagement() {
     },
   });
 
+  const createMutation = useMutation({
+    mutationFn: (data) => api.post('/admin/users', data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-users'] });
+      setIsCreateModalOpen(false);
+      setNewUserData({ name: '', email: '', password: '', role: 'user' });
+    },
+  });
+
   const handleEdit = (user) => {
     setSelectedUser(user);
     setFormData({ name: user.name, email: user.email, role: user.role });
@@ -54,6 +65,16 @@ export default function UserManagement() {
     setSelectedUser(user);
     setNewPassword('');
     setIsPasswordModalOpen(true);
+  };
+
+  const handleCreate = () => {
+    setNewUserData({ name: '', email: '', password: '', role: 'user' });
+    setIsCreateModalOpen(true);
+  };
+
+  const handleCreateSubmit = (e) => {
+    e.preventDefault();
+    createMutation.mutate(newUserData);
   };
 
   const handleDelete = (user) => {
@@ -92,6 +113,7 @@ export default function UserManagement() {
               onChange={(e) => setSearch(e.target.value)}
               className="w-64"
             />
+            <Button onClick={handleCreate}>New User</Button>
           </div>
         </CardHeader>
         <CardBody className="p-0">
@@ -176,6 +198,52 @@ export default function UserManagement() {
           </div>
         </div>
       )}
+
+      {/* Create User Modal */}
+      <Modal isOpen={isCreateModalOpen} onClose={() => setIsCreateModalOpen(false)} title="Create New User">
+        <form onSubmit={handleCreateSubmit} className="space-y-4">
+          <Input
+            label="Name"
+            value={newUserData.name}
+            onChange={(e) => setNewUserData({ ...newUserData, name: e.target.value })}
+            required
+          />
+          <Input
+            label="Email"
+            type="email"
+            value={newUserData.email}
+            onChange={(e) => setNewUserData({ ...newUserData, email: e.target.value })}
+            required
+          />
+          <Input
+            label="Password"
+            type="password"
+            value={newUserData.password}
+            onChange={(e) => setNewUserData({ ...newUserData, password: e.target.value })}
+            required
+          />
+          <Select
+            label="Role"
+            value={newUserData.role}
+            onChange={(e) => setNewUserData({ ...newUserData, role: e.target.value })}
+            options={[
+              { value: 'user', label: 'User' },
+              { value: 'admin', label: 'Administrator' },
+            ]}
+          />
+          {createMutation.error && (
+            <p className="text-sm text-red-600">{createMutation.error?.response?.data?.error || 'Failed to create user'}</p>
+          )}
+          <div className="flex justify-end gap-3 mt-6">
+            <Button variant="secondary" onClick={() => setIsCreateModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button type="submit" disabled={createMutation.isPending}>
+              {createMutation.isPending ? 'Creating...' : 'Create User'}
+            </Button>
+          </div>
+        </form>
+      </Modal>
 
       {/* Edit Modal */}
       <Modal isOpen={isEditModalOpen} onClose={() => setIsEditModalOpen(false)} title="Edit User">
