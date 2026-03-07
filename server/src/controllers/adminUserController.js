@@ -6,7 +6,7 @@ export const getUsers = async (req, res, next) => {
     const limit = parseInt(req.query.limit) || 20;
     const skip = (page - 1) * limit;
 
-    let query = {};
+    let query = { organization: req.user.organization };
 
     if (req.query.search) {
       query.$or = [
@@ -164,12 +164,8 @@ export const resetUserPassword = async (req, res, next) => {
 
 export const getActiveUsers = async (req, res, next) => {
   try {
-    const count = await User.countDocuments();
-
-    res.status(200).json({
-      success: true,
-      data: { count },
-    });
+    const count = await User.countDocuments({ organization: req.user.organization });
+    res.status(200).json({ success: true, data: { count } });
   } catch (error) {
     next(error);
   }
