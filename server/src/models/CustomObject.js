@@ -6,7 +6,7 @@ const customObjectSchema = new mongoose.Schema(
       type: String,
       required: [true, 'Object name is required'],
       trim: true,
-      unique: true,
+      // unique removed — uniqueness is now per-organization via compound index below
     },
     label: {
       type: String,
@@ -17,56 +17,28 @@ const customObjectSchema = new mongoose.Schema(
       type: String,
       required: [true, 'Plural label is required'],
     },
-    description: {
-      type: String,
-    },
-    icon: {
-      type: String,
-      default: 'cube',
-    },
-    color: {
-      type: String,
-      default: '#3b82f6',
-    },
-    enableActivities: {
-      type: Boolean,
-      default: true,
-    },
-    enableTasks: {
-      type: Boolean,
-      default: true,
-    },
-    enableReports: {
-      type: Boolean,
-      default: true,
-    },
-    enableSharing: {
-      type: Boolean,
-      default: false,
-    },
-    recordNameField: {
-      type: String,
-      default: 'name',
-    },
-    recordNameLabel: {
-      type: String,
-      default: 'Name',
-    },
-    isSystem: {
-      type: Boolean,
-      default: false,
-    },
-    active: {
-      type: Boolean,
-      default: true,
+    description: { type: String },
+    icon: { type: String, default: 'cube' },
+    color: { type: String, default: '#3b82f6' },
+    enableActivities: { type: Boolean, default: true },
+    enableTasks: { type: Boolean, default: true },
+    enableReports: { type: Boolean, default: true },
+    enableSharing: { type: Boolean, default: false },
+    recordNameField: { type: String, default: 'name' },
+    recordNameLabel: { type: String, default: 'Name' },
+    isSystem: { type: Boolean, default: false },
+    active: { type: Boolean, default: true },
+    organization: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Organization',
     },
   },
-  {
-    timestamps: true,
-  }
+  { timestamps: true }
 );
 
-// Pre-defined system objects
+// Unique name per organization
+customObjectSchema.index({ name: 1, organization: 1 }, { unique: true });
+
 customObjectSchema.statics.SYSTEM_OBJECTS = [
   { name: 'Account', label: 'Account', pluralLabel: 'Accounts', icon: 'office-building', color: '#3b82f6', isSystem: true },
   { name: 'Contact', label: 'Contact', pluralLabel: 'Contacts', icon: 'user', color: '#10b981', isSystem: true },
@@ -77,5 +49,4 @@ customObjectSchema.statics.SYSTEM_OBJECTS = [
 ];
 
 const CustomObject = mongoose.model('CustomObject', customObjectSchema);
-
 export default CustomObject;

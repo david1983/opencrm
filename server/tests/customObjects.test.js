@@ -69,7 +69,7 @@ describe('Custom Object Controller', () => {
     });
 
     it('should prevent duplicate object names', async () => {
-      await CustomObject.create({ name: 'Project', label: 'Project', pluralLabel: 'Projects' });
+      await CustomObject.create({ name: 'Project', label: 'Project', pluralLabel: 'Projects', organization: orgId });
 
       const response = await request(app)
         .post('/api/admin/setup/objects')
@@ -87,8 +87,8 @@ describe('Custom Object Controller', () => {
   describe('GET /api/admin/setup/objects', () => {
     beforeEach(async () => {
       await CustomObject.create([
-        { name: 'Project', label: 'Project', pluralLabel: 'Projects' },
-        { name: 'Task', label: 'Task', pluralLabel: 'Tasks' },
+        { name: 'Project', label: 'Project', pluralLabel: 'Projects', organization: orgId },
+        { name: 'Task', label: 'Task', pluralLabel: 'Tasks', organization: orgId },
       ]);
     });
 
@@ -107,7 +107,7 @@ describe('Custom Object Controller', () => {
     let objectId;
 
     beforeEach(async () => {
-      const obj = await CustomObject.create({ name: 'Project', label: 'Project', pluralLabel: 'Projects' });
+      const obj = await CustomObject.create({ name: 'Project', label: 'Project', pluralLabel: 'Projects', organization: orgId });
       objectId = obj._id;
       await CustomField.create({ object: objectId, name: 'name', label: 'Name', type: 'Text' });
     });
@@ -136,7 +136,7 @@ describe('Custom Object Controller', () => {
     let objectId;
 
     beforeEach(async () => {
-      const obj = await CustomObject.create({ name: 'Project', label: 'Project', pluralLabel: 'Projects' });
+      const obj = await CustomObject.create({ name: 'Project', label: 'Project', pluralLabel: 'Projects', organization: orgId });
       objectId = obj._id;
     });
 
@@ -158,7 +158,7 @@ describe('Custom Object Controller', () => {
     let objectId;
 
     beforeEach(async () => {
-      const obj = await CustomObject.create({ name: 'Project', label: 'Project', pluralLabel: 'Projects' });
+      const obj = await CustomObject.create({ name: 'Project', label: 'Project', pluralLabel: 'Projects', organization: orgId });
       objectId = obj._id;
     });
 
@@ -174,13 +174,35 @@ describe('Custom Object Controller', () => {
     });
 
     it('should not delete system objects', async () => {
-      const obj = await CustomObject.create({ name: 'SystemObj', label: 'System', pluralLabel: 'Systems', isSystem: true });
+      const obj = await CustomObject.create({ name: 'SystemObj', label: 'System', pluralLabel: 'Systems', isSystem: true, organization: orgId });
 
       const response = await request(app)
         .delete(`/api/admin/setup/objects/${obj._id}`)
         .set('Authorization', `Bearer ${adminToken}`);
 
       expect(response.status).toBe(400);
+    });
+  });
+
+  describe('Custom Object organization isolation', () => {
+    it('should not return custom objects from another organization', async () => {
+      // Create a second org with its own custom object
+      const org2 = await Organization.create({ name: 'Org 2' });
+      await CustomObject.create({
+        name: 'SecretObject',
+        label: 'Secret',
+        pluralLabel: 'Secrets',
+        organization: org2._id,
+      });
+
+      // Use the admin token from the outer describe to get objects
+      const response = await request(app)
+        .get('/api/admin/setup/objects')
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      expect(response.status).toBe(200);
+      const names = response.body.data.map(o => o.name);
+      expect(names).not.toContain('SecretObject');
     });
   });
 });
