@@ -21,6 +21,7 @@ import {
 import {
   OrganizationSettings,
   UserManagement,
+  RoleManagement,
   CustomObjects,
   ObjectDetail,
 } from './pages/admin';
@@ -109,6 +110,7 @@ function App() {
       >
         <Route index element={<OrganizationSettings />} />
         <Route path="users" element={<UserManagement />} />
+        <Route path="roles" element={<RoleManagement />} />
         <Route path="objects" element={<CustomObjects />} />
         <Route path="objects/:id" element={<ObjectDetail />} />
       </Route>
