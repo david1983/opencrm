@@ -158,6 +158,8 @@ describe('Contact Controller', () => {
         .set('Authorization', `Bearer ${token}`)
         .send({
           firstName: 'Updated',
+          lastName: 'Test',
+          email: 'updated@test.com',
           title: 'CEO',
         });
 

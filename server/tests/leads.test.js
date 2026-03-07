@@ -200,6 +200,8 @@ describe('Lead Controller', () => {
         .set('Authorization', `Bearer ${token}`)
         .send({
           firstName: 'Updated',
+          lastName: 'Lead',
+          email: 'updated@example.com',
           status: 'Contacted',
         });
 

@@ -48,6 +48,7 @@ export function Modal({ isOpen, onClose, title, children, size = 'md' }) {
                     type="button"
                     className="rounded-md text-gray-400 hover:text-gray-500 focus:outline-none"
                     onClick={onClose}
+                    aria-label="Close"
                   >
                     <XMarkIcon className="h-6 w-6" aria-hidden="true" />
                   </button>

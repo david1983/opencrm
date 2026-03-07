@@ -151,4 +151,4 @@ export function useFormValidation(initialValues, validationRules = {}) {
   };
 }
 
-export default validators;
+export { validators };

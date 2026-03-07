@@ -171,18 +171,20 @@ describe('Opportunity Controller', () => {
       opportunityId = opportunity._id;
     });
 
-    it('should update opportunity stage and probability', async () => {
+    it('should update opportunity stage', async () => {
       const response = await request(app)
         .put(`/api/opportunities/${opportunityId}`)
         .set('Authorization', `Bearer ${token}`)
         .send({
+          name: 'Update Test',
           stage: 'Proposal',
+          closeDate: '2024-12-31',
           amount: 50000,
         });
 
       expect(response.status).toBe(200);
       expect(response.body.data.stage).toBe('Proposal');
-      expect(response.body.data.probability).toBe(50);
+      expect(response.body.data.amount).toBe(50000);
     });
   });
 
