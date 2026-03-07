@@ -37,6 +37,18 @@ export default function ObjectDetail() {
     defaultValue: '',
   });
   const [newOption, setNewOption] = useState('');
+  const [isObjectModalOpen, setIsObjectModalOpen] = useState(false);
+  const [objectForm, setObjectForm] = useState({
+    label: '',
+    pluralLabel: '',
+    description: '',
+    icon: '',
+    color: '',
+    enableActivities: false,
+    enableTasks: false,
+    enableReports: false,
+    enableSharing: false,
+  });
 
   const queryClient = useQueryClient();
 
@@ -65,6 +77,14 @@ export default function ObjectDetail() {
     mutationFn: (fieldId) => api.delete(`/admin/setup/fields/${fieldId}`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['custom-object', id] });
+    },
+  });
+
+  const updateObjectMutation = useMutation({
+    mutationFn: (data) => api.put(`/admin/setup/objects/${id}`, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['custom-object', id] });
+      closeObjectModal();
     },
   });
 
@@ -146,6 +166,41 @@ export default function ObjectDetail() {
     });
   };
 
+  const openEditObjectModal = () => {
+    setObjectForm({
+      label: obj?.label || '',
+      pluralLabel: obj?.pluralLabel || '',
+      description: obj?.description || '',
+      icon: obj?.icon || '',
+      color: obj?.color || '',
+      enableActivities: obj?.enableActivities || false,
+      enableTasks: obj?.enableTasks || false,
+      enableReports: obj?.enableReports || false,
+      enableSharing: obj?.enableSharing || false,
+    });
+    setIsObjectModalOpen(true);
+  };
+
+  const closeObjectModal = () => {
+    setIsObjectModalOpen(false);
+    setObjectForm({
+      label: '',
+      pluralLabel: '',
+      description: '',
+      icon: '',
+      color: '',
+      enableActivities: false,
+      enableTasks: false,
+      enableReports: false,
+      enableSharing: false,
+    });
+  };
+
+  const handleObjectSubmit = (e) => {
+    e.preventDefault();
+    updateObjectMutation.mutate(objectForm);
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -203,7 +258,10 @@ export default function ObjectDetail() {
         <CardHeader>
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-medium text-gray-900">Fields</h2>
-            <Button onClick={openCreateFieldModal}>Add Field</Button>
+            <div className="flex gap-2">
+              <Button variant="secondary" onClick={openEditObjectModal}>Edit Object</Button>
+              <Button onClick={openCreateFieldModal}>Add Field</Button>
+            </div>
           </div>
         </CardHeader>
         <CardBody className="p-0">
@@ -354,6 +412,98 @@ export default function ObjectDetail() {
             </Button>
             <Button type="submit" disabled={createFieldMutation.isPending || updateFieldMutation.isPending}>
               {editingField ? 'Save Changes' : 'Create Field'}
+            </Button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* Object Edit Modal */}
+      <Modal isOpen={isObjectModalOpen} onClose={closeObjectModal} title="Edit Object" size="lg">
+        <form onSubmit={handleObjectSubmit} className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <Input
+              label="Label"
+              value={objectForm.label}
+              onChange={(e) => setObjectForm({ ...objectForm, label: e.target.value })}
+              placeholder="e.g., Account"
+              required
+            />
+            <Input
+              label="Plural Label"
+              value={objectForm.pluralLabel}
+              onChange={(e) => setObjectForm({ ...objectForm, pluralLabel: e.target.value })}
+              placeholder="e.g., Accounts"
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+            <textarea
+              value={objectForm.description}
+              onChange={(e) => setObjectForm({ ...objectForm, description: e.target.value })}
+              placeholder="Description for this object"
+              rows={3}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500"
+            />
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <Input
+              label="Icon"
+              value={objectForm.icon}
+              onChange={(e) => setObjectForm({ ...objectForm, icon: e.target.value })}
+              placeholder="Icon name"
+            />
+            <Input
+              label="Color"
+              value={objectForm.color}
+              onChange={(e) => setObjectForm({ ...objectForm, color: e.target.value })}
+              placeholder="Hex color, e.g., #3B82F6"
+            />
+          </div>
+          <div className="space-y-2">
+            <label className="flex items-center">
+              <input
+                type="checkbox"
+                checked={objectForm.enableActivities}
+                onChange={(e) => setObjectForm({ ...objectForm, enableActivities: e.target.checked })}
+                className="h-4 w-4 text-primary-600 rounded border-gray-300"
+              />
+              <span className="ml-2 text-sm text-gray-700">Enable Activities</span>
+            </label>
+            <label className="flex items-center">
+              <input
+                type="checkbox"
+                checked={objectForm.enableTasks}
+                onChange={(e) => setObjectForm({ ...objectForm, enableTasks: e.target.checked })}
+                className="h-4 w-4 text-primary-600 rounded border-gray-300"
+              />
+              <span className="ml-2 text-sm text-gray-700">Enable Tasks</span>
+            </label>
+            <label className="flex items-center">
+              <input
+                type="checkbox"
+                checked={objectForm.enableReports}
+                onChange={(e) => setObjectForm({ ...objectForm, enableReports: e.target.checked })}
+                className="h-4 w-4 text-primary-600 rounded border-gray-300"
+              />
+              <span className="ml-2 text-sm text-gray-700">Enable Reports</span>
+            </label>
+            <label className="flex items-center">
+              <input
+                type="checkbox"
+                checked={objectForm.enableSharing}
+                onChange={(e) => setObjectForm({ ...objectForm, enableSharing: e.target.checked })}
+                className="h-4 w-4 text-primary-600 rounded border-gray-300"
+              />
+              <span className="ml-2 text-sm text-gray-700">Enable Sharing</span>
+            </label>
+          </div>
+          <div className="flex justify-end gap-3 mt-6">
+            <Button variant="secondary" onClick={closeObjectModal}>
+              Cancel
+            </Button>
+            <Button type="submit" disabled={updateObjectMutation.isPending}>
+              Save Changes
             </Button>
           </div>
         </form>

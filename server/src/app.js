@@ -94,6 +94,7 @@ app.use('/api/oauth', oauthRoutes);
 app.use('/api/audit', auditRoutes);
 app.use('/api/notes', noteRoutes);
 app.use('/api/attachments', attachmentRoutes);
+app.use('/api/objects', objectRecordsRoutes);
 
 // 404 handler
 app.use((req, res) => {
