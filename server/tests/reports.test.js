@@ -87,6 +87,8 @@ describe('Report Controller', () => {
       expect(response.status).toBe(200);
       expect(response.body.success).toBe(true);
       expect(response.body.data).toBeDefined();
+      expect(response.body.data.stages).toBeDefined();
+      expect(response.body.data.summary).toBeDefined();
     });
 
     it('should group opportunities by stage', async () => {
@@ -95,8 +97,8 @@ describe('Report Controller', () => {
         .set('Authorization', `Bearer ${token}`);
 
       expect(response.status).toBe(200);
-      // Should have stages
-      expect(Array.isArray(response.body.data)).toBe(true);
+      expect(Array.isArray(response.body.data.stages)).toBe(true);
+      expect(response.body.data.summary.totalCount).toBe(3);
     });
   });
 
@@ -117,7 +119,8 @@ describe('Report Controller', () => {
         .set('Authorization', `Bearer ${token}`);
 
       expect(response.status).toBe(200);
-      expect(Array.isArray(response.body.data)).toBe(true);
+      expect(Array.isArray(response.body.data.byType)).toBe(true);
+      expect(response.body.data.total).toBe(3);
     });
   });
 
@@ -138,7 +141,22 @@ describe('Report Controller', () => {
         .set('Authorization', `Bearer ${token}`);
 
       expect(response.status).toBe(200);
-      expect(Array.isArray(response.body.data)).toBe(true);
+      expect(Array.isArray(response.body.data.sources)).toBe(true);
+      expect(response.body.data.total).toBe(4);
+    });
+  });
+
+  describe('GET /api/reports/dashboard', () => {
+    it('should return dashboard summary', async () => {
+      const response = await request(app)
+        .get('/api/reports/dashboard')
+        .set('Authorization', `Bearer ${token}`);
+
+      expect(response.status).toBe(200);
+      expect(response.body.success).toBe(true);
+      expect(response.body.data.counts).toBeDefined();
+      expect(response.body.data.counts.leads).toBe(4);
+      expect(response.body.data.counts.opportunities).toBe(3);
     });
   });
 });
