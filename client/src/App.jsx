@@ -24,6 +24,7 @@ import {
   RoleManagement,
   CustomObjects,
   ObjectDetail,
+  ConnectedApps,
 } from './pages/admin';
 
 function PublicRoute({ children }) {
@@ -113,6 +114,7 @@ function App() {
         <Route path="roles" element={<RoleManagement />} />
         <Route path="objects" element={<CustomObjects />} />
         <Route path="objects/:id" element={<ObjectDetail />} />
+        <Route path="connected-apps" element={<ConnectedApps />} />
       </Route>
 
       {/* Catch all - redirect to dashboard */}
