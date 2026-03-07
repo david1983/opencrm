@@ -1,5 +1,22 @@
 import { getOrCreateModel, getObjectDefinition } from '../services/dynamicModel.js';
 
+// @desc    Get object definition with fields
+// @route   GET /api/objects/:objectName/definition
+export const getDefinition = async (req, res, next) => {
+  try {
+    const { objectName } = req.params;
+
+    const objectDef = await getObjectDefinition(objectName);
+
+    res.status(200).json({
+      success: true,
+      data: objectDef,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 // @desc    Get records for a custom object
 // @route   GET /api/objects/:objectName
 export const getRecords = async (req, res, next) => {
