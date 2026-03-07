@@ -7,6 +7,10 @@ import Account from '../src/models/Account.js';
 import Contact from '../src/models/Contact.js';
 import Lead from '../src/models/Lead.js';
 import Opportunity from '../src/models/Opportunity.js';
+import Activity from '../src/models/Activity.js';
+import Task from '../src/models/Task.js';
+import Note from '../src/models/Note.js';
+import Attachment from '../src/models/Attachment.js';
 
 describe('IDOR Prevention — single-entity GET endpoints', () => {
   let app;
@@ -29,6 +33,10 @@ describe('IDOR Prevention — single-entity GET endpoints', () => {
     await Contact.deleteMany({});
     await Lead.deleteMany({});
     await Opportunity.deleteMany({});
+    await Activity.deleteMany({});
+    await Task.deleteMany({});
+    await Note.deleteMany({});
+    await Attachment.deleteMany({});
 
     const org1 = await Organization.create({ name: 'Org 1' });
     org1Id = org1._id;
@@ -107,6 +115,89 @@ describe('IDOR Prevention — single-entity GET endpoints', () => {
     const response = await request(app)
       .get(`/api/opportunities/${opp._id}`)
       .set('Authorization', `Bearer ${user2Token}`);
+
+    expect(response.status).toBe(404);
+  });
+
+  it('should not allow user2 to GET an activity owned by user1', async () => {
+    const activity = await Activity.create({
+      type: 'Call',
+      subject: 'Secret Call',
+      date: new Date(),
+      owner: user1Id,
+      organization: org1Id,
+    });
+
+    const response = await request(app)
+      .get(`/api/activities/${activity._id}`)
+      .set('Authorization', `Bearer ${user2Token}`);
+
+    expect(response.status).toBe(404);
+  });
+
+  it('should not allow user2 to GET a task owned by user1', async () => {
+    const task = await Task.create({
+      subject: 'Secret Task',
+      dueDate: new Date(),
+      owner: user1Id,
+      organization: org1Id,
+    });
+
+    const response = await request(app)
+      .get(`/api/tasks/${task._id}`)
+      .set('Authorization', `Bearer ${user2Token}`);
+
+    expect(response.status).toBe(404);
+  });
+
+  it('should not allow user2 to GET a note belonging to org1 via direct ID', async () => {
+    const note = await Note.create({
+      title: 'Secret Note',
+      content: 'Private content',
+      parentType: 'Account',
+      parentId: new mongoose.Types.ObjectId(),
+      owner: user1Id,
+      organization: org1Id,
+    });
+
+    // user2 is in same org1, so this tests org scoping works (user2 CAN read org notes — that's correct)
+    // BUT a user from org2 should NOT be able to. Let's test cross-org isolation:
+    const org2 = await Organization.create({ name: 'Org 2' });
+    const u3 = await User.create({
+      name: 'User 3', email: 'u3@test.com', password: 'pass1234', organization: org2._id,
+    });
+    const r3 = await request(app).post('/api/auth/login').send({ email: 'u3@test.com', password: 'pass1234' });
+    const user3Token = r3.body.token;
+
+    const response = await request(app)
+      .get(`/api/notes/${note._id}`)
+      .set('Authorization', `Bearer ${user3Token}`);
+
+    expect(response.status).toBe(404);
+  });
+
+  it('should not allow user2 to GET an attachment belonging to org1 via direct ID', async () => {
+    const attachment = await Attachment.create({
+      filename: 'secret.txt',
+      originalName: 'secret.txt',
+      mimeType: 'text/plain',
+      size: 100,
+      parentType: 'Account',
+      parentId: new mongoose.Types.ObjectId(),
+      owner: user1Id,
+      organization: org1Id,
+    });
+
+    const org2 = await Organization.create({ name: 'Org 2b' });
+    const u4 = await User.create({
+      name: 'User 4', email: 'u4@test.com', password: 'pass1234', organization: org2._id,
+    });
+    const r4 = await request(app).post('/api/auth/login').send({ email: 'u4@test.com', password: 'pass1234' });
+    const user4Token = r4.body.token;
+
+    const response = await request(app)
+      .get(`/api/attachments/${attachment._id}?meta=true`)
+      .set('Authorization', `Bearer ${user4Token}`);
 
     expect(response.status).toBe(404);
   });
