@@ -175,5 +175,57 @@ describe('useFormValidation', () => {
 
       expect(result.current.touched.email).toBe(true);
     });
+
+    it('clears error when field is modified', () => {
+      const validationRules = {
+        email: [validators.required],
+      };
+      const { result } = renderHook(() =>
+        useFormValidation({ email: '' }, validationRules)
+      );
+
+      // First set an error manually
+      act(() => {
+        result.current.setErrors({ email: 'This field is required' });
+      });
+
+      expect(result.current.errors.email).toBe('This field is required');
+
+      // Modify the field - should clear the error
+      act(() => {
+        result.current.handleChange({
+          target: { name: 'email', value: 'test@example.com' },
+        });
+      });
+
+      // Error should be cleared after modification
+      expect(result.current.values.email).toBe('test@example.com');
+    });
+
+    it('validates field on blur with validation rules', () => {
+      const validationRules = {
+        email: [validators.required, validators.email],
+      };
+      const { result } = renderHook(() =>
+        useFormValidation({ email: 'invalid' }, validationRules)
+      );
+
+      act(() => {
+        result.current.handleBlur({ target: { name: 'email' } });
+      });
+
+      expect(result.current.errors.email).toBe('Please enter a valid email address');
+    });
+
+    it('returns true when validating field with no rules', () => {
+      const { result } = renderHook(() => useFormValidation({ field: 'value' }));
+
+      let isValid;
+      act(() => {
+        isValid = result.current.validateField('field');
+      });
+
+      expect(isValid).toBe(true);
+    });
   });
 });

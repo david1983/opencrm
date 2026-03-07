@@ -81,34 +81,38 @@ describe('Audit Controller', () => {
     token = response.body.token;
   });
 
-  describe('GET /api/audit', () => {
-    it('should return audit logs', async () => {
+  describe('GET /api/audit/:entityType/:entityId', () => {
+    it('should return audit logs for an entity', async () => {
       const response = await request(app)
-        .get('/api/audit')
+        .get(`/api/audit/Account/${accountId}`)
         .set('Authorization', `Bearer ${token}`);
 
       expect(response.status).toBe(200);
-      expect(response.body.success).toBe(true);
+      expect(response.body.status).toBe('success');
       expect(response.body.data).toBeDefined();
       expect(response.body.data.length).toBeGreaterThanOrEqual(2);
     });
 
-    it('should filter by entity type', async () => {
+    it('should return empty array for non-existent entity', async () => {
+      const fakeId = new mongoose.Types.ObjectId();
       const response = await request(app)
-        .get('/api/audit?entityType=Account')
+        .get(`/api/audit/Account/${fakeId}`)
         .set('Authorization', `Bearer ${token}`);
 
       expect(response.status).toBe(200);
-      expect(response.body.data.every(log => log.entityType === 'Account')).toBe(true);
+      expect(response.body.data).toEqual([]);
     });
+  });
 
-    it('should filter by entity id', async () => {
+  describe('GET /api/audit/recent', () => {
+    it('should return recent audit logs', async () => {
       const response = await request(app)
-        .get(`/api/audit?entityId=${accountId}`)
+        .get('/api/audit/recent')
         .set('Authorization', `Bearer ${token}`);
 
       expect(response.status).toBe(200);
-      expect(response.body.data.every(log => log.entityId.toString() === accountId.toString())).toBe(true);
+      expect(response.body.status).toBe('success');
+      expect(response.body.data).toBeDefined();
     });
   });
 });
