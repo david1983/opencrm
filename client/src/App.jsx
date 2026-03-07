@@ -17,12 +17,16 @@ import {
   ActivitiesList,
   TasksList,
   ReportsPage,
+  CustomObjectList,
+  CustomObjectDetail,
 } from './pages';
 import {
   OrganizationSettings,
   UserManagement,
+  RoleManagement,
   CustomObjects,
   ObjectDetail,
+  ConnectedApps,
 } from './pages/admin';
 
 function PublicRoute({ children }) {
@@ -96,6 +100,8 @@ function App() {
         <Route path="/activities" element={<ActivitiesList />} />
         <Route path="/tasks" element={<TasksList />} />
         <Route path="/reports" element={<ReportsPage />} />
+        <Route path="/objects/:objectName" element={<CustomObjectList />} />
+        <Route path="/objects/:objectName/:recordId" element={<CustomObjectDetail />} />
       </Route>
 
       {/* Admin routes */}
@@ -109,8 +115,10 @@ function App() {
       >
         <Route index element={<OrganizationSettings />} />
         <Route path="users" element={<UserManagement />} />
+        <Route path="roles" element={<RoleManagement />} />
         <Route path="objects" element={<CustomObjects />} />
         <Route path="objects/:id" element={<ObjectDetail />} />
+        <Route path="connected-apps" element={<ConnectedApps />} />
       </Route>
 
       {/* Catch all - redirect to dashboard */}

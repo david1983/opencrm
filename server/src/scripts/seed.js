@@ -7,6 +7,8 @@ import Lead from '../models/Lead.js';
 import Opportunity from '../models/Opportunity.js';
 import Activity from '../models/Activity.js';
 import Task from '../models/Task.js';
+import Role from '../models/Role.js';
+import Organization from '../models/Organization.js';
 
 // Configuration
 const SEED_USER_COUNT = 1;
@@ -84,7 +86,16 @@ async function seed() {
       Opportunity.deleteMany({}),
       Activity.deleteMany({}),
       Task.deleteMany({}),
+      Role.deleteMany({}),
+      Organization.deleteMany({}),
     ]);
+
+    // Create organization
+    console.log('Creating organization...');
+    const organization = await Organization.create({
+      name: 'Demo Organization',
+    });
+    console.log(`Created organization: ${organization.name}`);
 
     // Create demo user
     console.log('Creating demo user...');
@@ -93,8 +104,82 @@ async function seed() {
       email: 'demo@example.com',
       password: 'password123', // Will be hashed by the model's pre-save hook
       role: 'admin',
+      organization: organization._id,
     });
     console.log(`Created user: ${user.email} (password: password123)`);
+
+    // Create default roles
+    console.log('Creating default roles...');
+    const defaultRoles = [
+      {
+        name: 'Administrator',
+        description: 'Full system access with all permissions',
+        organization: organization._id,
+        isSystem: true,
+        permissions: [
+          { module: 'accounts', actions: ['view', 'edit', 'delete', 'create', 'export', 'import'] },
+          { module: 'contacts', actions: ['view', 'edit', 'delete', 'create', 'export', 'import'] },
+          { module: 'leads', actions: ['view', 'edit', 'delete', 'create', 'export', 'import'] },
+          { module: 'opportunities', actions: ['view', 'edit', 'delete', 'create', 'export', 'import'] },
+          { module: 'activities', actions: ['view', 'edit', 'delete', 'create', 'export', 'import'] },
+          { module: 'tasks', actions: ['view', 'edit', 'delete', 'create', 'export', 'import'] },
+          { module: 'reports', actions: ['view', 'edit', 'delete', 'create', 'export', 'import'] },
+          { module: 'admin', actions: ['view', 'edit', 'delete', 'create'] },
+          { module: 'settings', actions: ['view', 'edit'] },
+        ],
+      },
+      {
+        name: 'Sales Manager',
+        description: 'Manage sales team with full CRM access',
+        organization: organization._id,
+        isSystem: true,
+        permissions: [
+          { module: 'accounts', actions: ['view', 'edit', 'delete', 'create', 'export'] },
+          { module: 'contacts', actions: ['view', 'edit', 'delete', 'create', 'export'] },
+          { module: 'leads', actions: ['view', 'edit', 'delete', 'create', 'export'] },
+          { module: 'opportunities', actions: ['view', 'edit', 'delete', 'create', 'export'] },
+          { module: 'activities', actions: ['view', 'edit', 'delete', 'create'] },
+          { module: 'tasks', actions: ['view', 'edit', 'delete', 'create'] },
+          { module: 'reports', actions: ['view', 'create', 'export'] },
+          { module: 'admin', actions: ['view'] },
+          { module: 'settings', actions: ['view'] },
+        ],
+      },
+      {
+        name: 'Sales Rep',
+        description: 'Standard sales access to manage own records',
+        organization: organization._id,
+        isSystem: true,
+        permissions: [
+          { module: 'accounts', actions: ['view', 'edit', 'create'] },
+          { module: 'contacts', actions: ['view', 'edit', 'create'] },
+          { module: 'leads', actions: ['view', 'edit', 'create'] },
+          { module: 'opportunities', actions: ['view', 'edit', 'create'] },
+          { module: 'activities', actions: ['view', 'edit', 'create'] },
+          { module: 'tasks', actions: ['view', 'edit', 'create'] },
+          { module: 'reports', actions: ['view'] },
+        ],
+      },
+      {
+        name: 'User',
+        description: 'Basic read-only access',
+        organization: organization._id,
+        isSystem: true,
+        permissions: [
+          { module: 'accounts', actions: ['view'] },
+          { module: 'contacts', actions: ['view'] },
+          { module: 'leads', actions: ['view'] },
+          { module: 'opportunities', actions: ['view'] },
+          { module: 'activities', actions: ['view'] },
+          { module: 'tasks', actions: ['view'] },
+        ],
+      },
+    ];
+
+    for (const roleData of defaultRoles) {
+      await Role.create(roleData);
+    }
+    console.log(`Created ${defaultRoles.length} default roles`);
 
     // Create accounts
     console.log('Creating accounts...');

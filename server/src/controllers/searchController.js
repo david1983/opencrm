@@ -25,7 +25,8 @@ export const globalSearch = async (req, res, next) => {
       });
     }
 
-    const searchRegex = new RegExp(q.trim(), 'i');
+    const escaped = q.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const searchRegex = new RegExp(escaped, 'i');
     const limit = 5; // Limit results per entity
 
     // Search accounts

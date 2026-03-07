@@ -15,7 +15,7 @@ const router = express.Router();
 router.use(protect);
 
 router.route('/')
-  .get(paginationRules, getOpportunities)
+  .get(paginationRules, validate, getOpportunities)
   .post(opportunityRules, validate, createOpportunity);
 
 router.route('/:id')

@@ -28,6 +28,10 @@ const userSchema = new mongoose.Schema(
       enum: ['user', 'admin'],
       default: 'user',
     },
+    roleRef: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Role',
+    },
     organization: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Organization',
@@ -49,7 +53,7 @@ const userSchema = new mongoose.Schema(
 // Hash password before saving
 userSchema.pre('save', async function (next) {
   if (!this.isModified('password')) {
-    next();
+    return next();
   }
   if (this.password) {
     const salt = await bcrypt.genSalt(10);
