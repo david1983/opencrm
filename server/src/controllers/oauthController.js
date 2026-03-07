@@ -113,7 +113,7 @@ export const token = async (req, res, next) => {
     const app = await ConnectedApp.findOne({
       clientId: client_id,
       isActive: true,
-    });
+    }).select('+clientSecretHash');
 
     if (!app) {
       return res.status(400).json({
