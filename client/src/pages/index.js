@@ -1,0 +1,14 @@
+export { default as LoginPage } from './LoginPage';
+export { default as RegisterPage } from './RegisterPage';
+export { default as Dashboard } from './Dashboard';
+export { default as AccountsList } from './AccountsList';
+export { default as AccountDetail } from './AccountDetail';
+export { default as ContactsList } from './ContactsList';
+export { default as ContactDetail } from './ContactDetail';
+export { default as LeadsList } from './LeadsList';
+export { default as LeadDetail } from './LeadDetail';
+export { default as OpportunitiesList } from './OpportunitiesList';
+export { default as OpportunityDetail } from './OpportunityDetail';
+export { default as ActivitiesList } from './ActivitiesList';
+export { default as TasksList } from './TasksList';
+export { default as ReportsPage } from './ReportsPage';
