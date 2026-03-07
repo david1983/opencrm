@@ -6,14 +6,10 @@ import CustomField from '../models/CustomField.js';
 const modelCache = new Map();
 
 /**
- * Convert CustomField type to Mongoose schema type definition
- * @param {Object} field - CustomField document
- * @returns {Object} Mongoose schema type definition
+ * Get field type definition for Mongoose schema
  */
-const getFieldTypeDefinition = (field) => {
-  const baseDefinition = {
-    required: field.required || false,
-  };
+function getFieldTypeDefinition(field) {
+  const baseDef = {};
 
   switch (field.type) {
     case 'Text':
@@ -22,195 +18,162 @@ const getFieldTypeDefinition = (field) => {
     case 'Url':
     case 'TextArea':
     case 'LongTextArea':
-      baseDefinition.type = String;
-      baseDefinition.trim = true;
-      if (field.validation?.minLength) {
-        baseDefinition.minlength = field.validation.minLength;
-      }
-      if (field.validation?.maxLength) {
-        baseDefinition.maxlength = field.validation.maxLength;
-      }
-      if (field.validation?.regex) {
-        baseDefinition.match = new RegExp(field.validation.regex);
+      baseDef.type = String;
+      if (field.type === 'Email') {
+        baseDef.lowercase = true;
+        baseDef.trim = true;
       }
       break;
-
     case 'Number':
     case 'Currency':
     case 'Percent':
-      baseDefinition.type = Number;
-      if (field.validation?.minValue !== undefined) {
-        baseDefinition.min = field.validation.minValue;
-      }
-      if (field.validation?.maxValue !== undefined) {
-        baseDefinition.max = field.validation.maxValue;
+      baseDef.type = Number;
+      if (field.type === 'Percent') {
+        baseDef.min = 0;
+        baseDef.max = 100;
       }
       break;
-
     case 'Date':
     case 'DateTime':
-      baseDefinition.type = Date;
+      baseDef.type = Date;
       break;
-
     case 'Boolean':
-      baseDefinition.type = Boolean;
+      baseDef.type = Boolean;
       break;
-
     case 'Picklist':
-      baseDefinition.type = String;
+      baseDef.type = String;
       if (field.options && field.options.length > 0) {
-        baseDefinition.enum = field.options.map(opt => opt.value);
-        // Set default value if specified
-        const defaultOption = field.options.find(opt => opt.default);
-        if (defaultOption) {
-          baseDefinition.default = defaultOption.value;
-        }
+        baseDef.enum = field.options.map(opt => opt.value);
       }
       break;
-
     case 'MultiPicklist':
-      baseDefinition.type = [String];
+      baseDef.type = [String];
       if (field.options && field.options.length > 0) {
-        baseDefinition.enum = field.options.map(opt => opt.value);
+        baseDef.enum = field.options.map(opt => opt.value);
       }
       break;
-
     case 'Lookup':
-      baseDefinition.type = mongoose.Schema.Types.ObjectId;
-      baseDefinition.ref = field.lookupObject || 'User';
+      baseDef.type = mongoose.Schema.Types.ObjectId;
+      if (field.lookupObject) {
+        baseDef.ref = field.lookupObject;
+      }
       break;
-
     default:
-      baseDefinition.type = String;
+      baseDef.type = String;
   }
 
-  // Set default value if provided
-  if (field.defaultValue !== undefined && field.type !== 'Picklist') {
-    baseDefinition.default = field.defaultValue;
+  // Add common field properties
+  if (field.required) {
+    baseDef.required = [true, `${field.label} is required`];
+  }
+  if (field.defaultValue !== undefined && field.defaultValue !== '') {
+    baseDef.default = field.defaultValue;
   }
 
-  return baseDefinition;
-};
+  return baseDef;
+}
 
 /**
- * Build a Mongoose schema from field definitions
- * @param {Array} fields - Array of CustomField documents
- * @returns {mongoose.Schema} Mongoose schema
+ * Build Mongoose schema from custom field definitions
  */
-const buildSchemaFromFields = (fields) => {
-  const schemaDefinition = {};
-
-  // Add standard fields for all records
-  schemaDefinition.owner = {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-    required: true,
+function buildSchemaFromFields(fields) {
+  const schemaDef = {
+    owner: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      required: true,
+    },
+    organization: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Organization',
+      required: true,
+    },
   };
 
-  schemaDefinition.organization = {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Organization',
-    required: true,
-  };
-
-  // Add custom fields
-  fields.forEach(field => {
-    if (!field.active) return;
-
-    schemaDefinition[field.name] = getFieldTypeDefinition(field);
-  });
-
-  const schema = new mongoose.Schema(schemaDefinition, {
-    timestamps: true,
-  });
-
-  // Add text index for searchable fields
-  const textIndexFields = {};
-  fields.forEach(field => {
-    if (field.active && ['Text', 'Email', 'Phone', 'Url', 'TextArea', 'LongTextArea'].includes(field.type)) {
-      textIndexFields[field.name] = 'text';
+  // Add each custom field to schema
+  for (const field of fields) {
+    if (field.name && field.name !== 'owner' && field.name !== 'organization') {
+      schemaDef[field.name] = getFieldTypeDefinition(field);
     }
-  });
-
-  // Only create text index if there are text-searchable fields
-  if (Object.keys(textIndexFields).length > 0) {
-    schema.index(textIndexFields);
   }
 
-  return schema;
-};
+  return new mongoose.Schema(schemaDef, { timestamps: true });
+}
 
 /**
- * Get object definition with fields
- * @param {string} objectName - Name of the custom object
- * @returns {Object|null} Object definition with fields
+ * Get or create a dynamic model for a custom object
+ * @param {string} objectName - The name of the custom object (e.g., 'Project')
+ * @returns {Promise<Model>} - The Mongoose model
  */
-const getObjectDefinition = async (objectName) => {
-  const object = await CustomObject.findOne({
-    name: objectName,
-    active: true,
+export async function getOrCreateModel(objectName) {
+  const collectionName = `custom_${objectName}`;
+
+  // Check cache first
+  if (modelCache.has(collectionName)) {
+    // Check if model is still registered with mongoose
+    try {
+      return mongoose.model(collectionName);
+    } catch (e) {
+      // Model not registered, recreate it
+      modelCache.delete(collectionName);
+    }
+  }
+
+  // Find the custom object definition
+  const customObject = await CustomObject.findOne({
+    $or: [
+      { name: objectName },
+      { _id: mongoose.Types.ObjectId.isValid(objectName) ? objectName : null }
+    ]
   });
 
-  if (!object) {
-    return null;
+  if (!customObject) {
+    throw new Error(`Custom object '${objectName}' not found`);
   }
 
-  const fields = await CustomField.find({
-    object: object._id,
-    active: true,
-  }).sort({ order: 1, createdAt: 1 });
+  // Get all fields for this object
+  const fields = await CustomField.find({ object: customObject._id })
+    .sort({ order: 1, createdAt: 1 });
 
-  return {
-    ...object.toObject(),
-    fields,
-  };
-};
+  // Build schema
+  const schema = buildSchemaFromFields(fields);
 
-/**
- * Get or create a dynamic Mongoose model for a custom object
- * @param {string} objectName - Name of the custom object
- * @returns {mongoose.Model|null} Mongoose model or null if object not found
- */
-const getOrCreateModel = async (objectName) => {
-  // Check if model is already cached
-  if (modelCache.has(objectName)) {
-    return modelCache.get(objectName);
-  }
-
-  // Get object definition
-  const objectDef = await getObjectDefinition(objectName);
-  if (!objectDef) {
-    return null;
-  }
-
-  // Check if the model is already registered with mongoose
-  if (mongoose.models[objectName]) {
-    const existingModel = mongoose.models[objectName];
-    modelCache.set(objectName, existingModel);
-    return existingModel;
-  }
-
-  // Build schema from fields
-  const schema = buildSchemaFromFields(objectDef.fields);
-
-  // Create and cache the model
-  const model = mongoose.model(objectName, schema);
-  modelCache.set(objectName, model);
+  // Create model
+  const model = mongoose.model(collectionName, schema, collectionName);
+  modelCache.set(collectionName, model);
 
   return model;
-};
+}
 
 /**
- * Clear the model cache (useful for testing or when schema changes)
+ * Get custom object definition with fields
+ * @param {string} objectName - The name of the custom object
+ * @returns {Promise<Object>} - The custom object with fields
  */
-const clearModelCache = () => {
-  modelCache.clear();
-};
+export async function getObjectDefinition(objectName) {
+  const customObject = await CustomObject.findOne({
+    $or: [
+      { name: objectName },
+      { _id: mongoose.Types.ObjectId.isValid(objectName) ? objectName : null }
+    ]
+  });
 
-export {
-  getFieldTypeDefinition,
-  buildSchemaFromFields,
-  getOrCreateModel,
-  getObjectDefinition,
-  clearModelCache,
-};
+  if (!customObject) {
+    throw new Error(`Custom object '${objectName}' not found`);
+  }
+
+  const fields = await CustomField.find({ object: customObject._id, active: true })
+    .sort({ order: 1, createdAt: 1 });
+
+  return {
+    ...customObject.toObject(),
+    fields,
+  };
+}
+
+/**
+ * Clear model cache (useful for testing)
+ */
+export function clearModelCache() {
+  modelCache.clear();
+}
