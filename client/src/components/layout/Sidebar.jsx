@@ -29,7 +29,7 @@ export default function Sidebar() {
     >
       <div className="flex h-16 items-center justify-between px-4 border-b border-slate-700">
         {sidebarOpen && (
-          <span className="text-xl font-bold">SFDC CRM</span>
+          <span className="text-xl font-bold">OpenCRM</span>
         )}
       </div>
 
