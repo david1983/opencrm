@@ -31,6 +31,7 @@ const customObjectSchema = new mongoose.Schema(
     organization: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Organization',
+      required: true,
     },
   },
   { timestamps: true }

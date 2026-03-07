@@ -42,6 +42,7 @@ describe('Custom Field - Additional Coverage', () => {
       name: 'Project',
       label: 'Project',
       pluralLabel: 'Projects',
+      organization: orgId,
     });
     objectId = customObj._id;
 

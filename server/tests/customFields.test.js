@@ -46,6 +46,7 @@ describe('Custom Field Controller', () => {
       name: 'Project',
       label: 'Project',
       pluralLabel: 'Projects',
+      organization: orgId,
     });
     objectId = customObj._id;
 

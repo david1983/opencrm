@@ -126,8 +126,8 @@ export const updateCustomObject = async (req, res, next) => {
       });
     }
 
-    object = await CustomObject.findByIdAndUpdate(
-      req.params.id,
+    object = await CustomObject.findOneAndUpdate(
+      { _id: req.params.id, organization: req.user.organization },
       { label, pluralLabel, description, icon, color, enableActivities, enableTasks, enableReports, active },
       { new: true, runValidators: true }
     );
