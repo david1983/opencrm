@@ -6,6 +6,8 @@ import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import morgan from 'morgan';
 import passport from 'passport';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
 // Import routes
 import authRoutes from './routes/authRoutes.js';
@@ -26,6 +28,7 @@ import attachmentRoutes from './routes/attachmentRoutes.js';
 import roleAdminRoutes from './routes/roleAdminRoutes.js';
 import connectedAppAdminRoutes from './routes/connectedAppAdminRoutes.js';
 import oauthRoutes from './routes/oauthRoutes.js';
+import objectRecordsRoutes from './routes/objectRecordsRoutes.js';
 
 // Import middleware
 import errorHandler from './middleware/error.js';
@@ -95,6 +98,23 @@ app.use('/api/audit', auditRoutes);
 app.use('/api/notes', noteRoutes);
 app.use('/api/attachments', attachmentRoutes);
 app.use('/api/objects', objectRecordsRoutes);
+
+// Serve static files in production
+if (process.env.NODE_ENV === 'production') {
+  const __filename = fileURLToPath(import.meta.url);
+  const __dirname = path.dirname(__filename);
+  const clientPath = path.join(__dirname, '../../client/dist');
+
+  app.use(express.static(clientPath));
+
+  // Handle SPA routing - send all non-API routes to index.html
+  app.get('*', (req, res, next) => {
+    if (req.path.startsWith('/api')) {
+      return next();
+    }
+    res.sendFile(path.join(clientPath, 'index.html'));
+  });
+}
 
 // 404 handler
 app.use((req, res) => {
