@@ -19,6 +19,8 @@ class ApiClient {
 
   async request(endpoint, options = {}) {
     const token = this.getAuthToken();
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 30000);
 
     const config = {
       ...options,
@@ -28,19 +30,29 @@ class ApiClient {
         ...options.headers,
       },
       credentials: 'include',
+      signal: controller.signal,
     };
 
-    const response = await fetch(`${this.baseUrl}${endpoint}`, config);
-    const data = await response.json();
+    try {
+      const response = await fetch(`${this.baseUrl}${endpoint}`, config);
+      const data = await response.json();
 
-    if (!response.ok) {
-      const error = new Error(data.error || 'An error occurred');
-      error.status = response.status;
-      error.data = data;
-      throw error;
+      if (!response.ok) {
+        const error = new Error(data.error || 'An error occurred');
+        error.status = response.status;
+        error.data = data;
+        throw error;
+      }
+
+      return data;
+    } catch (err) {
+      if (err.name === 'AbortError') {
+        throw new Error('Request timed out. Please try again.');
+      }
+      throw err;
+    } finally {
+      clearTimeout(timeout);
     }
-
-    return data;
   }
 
   get(endpoint, options = {}) {
