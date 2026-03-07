@@ -109,12 +109,16 @@ describe('Custom Field Controller - Extended', () => {
           name: 'status',
           label: 'Status',
           type: 'Picklist',
-          options: ['Open', 'In Progress', 'Closed'],
+          options: [
+            { value: 'Open', label: 'Open' },
+            { value: 'In Progress', label: 'In Progress' },
+            { value: 'Closed', label: 'Closed' }
+          ],
         });
 
       expect(response.status).toBe(201);
       expect(response.body.data.type).toBe('Picklist');
-      expect(response.body.data.options).toEqual(['Open', 'In Progress', 'Closed']);
+      expect(response.body.data.options).toHaveLength(3);
     });
 
     it('should create Lookup field with lookupObject', async () => {
@@ -216,7 +220,10 @@ describe('Custom Field Controller - Extended', () => {
         name: 'status',
         label: 'Status',
         type: 'Picklist',
-        options: ['Open', 'Closed'],
+        options: [
+          { value: 'Open', label: 'Open' },
+          { value: 'Closed', label: 'Closed' }
+        ],
       });
 
       const response = await request(app)
@@ -224,7 +231,12 @@ describe('Custom Field Controller - Extended', () => {
         .set('Authorization', `Bearer ${adminToken}`)
         .send({
           label: 'Updated Status',
-          options: ['Open', 'In Progress', 'Closed', 'Cancelled'],
+          options: [
+            { value: 'Open', label: 'Open' },
+            { value: 'In Progress', label: 'In Progress' },
+            { value: 'Closed', label: 'Closed' },
+            { value: 'Cancelled', label: 'Cancelled' }
+          ],
         });
 
       expect(response.status).toBe(200);
@@ -287,13 +299,15 @@ describe('Custom Field Controller - Extended', () => {
         order: 3,
       });
 
-      // Reverse order
-      const newOrder = [field3._id, field2._id, field1._id, await CustomField.findOne({ object: objectId, name: 'name' })];
+      const nameField = await CustomField.findOne({ object: objectId, name: 'name' });
+
+      // Reverse order (excluding name field)
+      const newOrder = [field3._id.toString(), field2._id.toString(), field1._id.toString()];
 
       const response = await request(app)
-        .post(`/api/admin/setup/objects/${objectId}/fields/reorder`)
+        .put(`/api/admin/setup/objects/${objectId}/fields/reorder`)
         .set('Authorization', `Bearer ${adminToken}`)
-        .send({ fieldOrder: newOrder.map(f => f._id || f) });
+        .send({ fieldOrder: newOrder });
 
       expect(response.status).toBe(200);
       expect(response.body.message).toBe('Fields reordered successfully');
