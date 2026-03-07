@@ -42,6 +42,9 @@ export default function RoleManagement() {
       queryClient.invalidateQueries({ queryKey: ['admin-roles'] });
       closeModal();
     },
+    onError: (error) => {
+      console.error('Failed to create role:', error);
+    },
   });
 
   const updateMutation = useMutation({
@@ -50,12 +53,18 @@ export default function RoleManagement() {
       queryClient.invalidateQueries({ queryKey: ['admin-roles'] });
       closeModal();
     },
+    onError: (error) => {
+      console.error('Failed to update role:', error);
+    },
   });
 
   const deleteMutation = useMutation({
     mutationFn: (id) => api.delete(`/admin/roles/${id}`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-roles'] });
+    },
+    onError: (error) => {
+      console.error('Failed to delete role:', error);
     },
   });
 
@@ -131,13 +140,7 @@ export default function RoleManagement() {
 
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
-            <Input
-              type="search"
-              placeholder="Search roles..."
-              className="w-64"
-              disabled
-            />
+          <div className="flex items-center justify-end">
             <Button onClick={openCreateModal}>New Role</Button>
           </div>
         </CardHeader>
@@ -247,6 +250,7 @@ export default function RoleManagement() {
                             type="checkbox"
                             checked={actions.includes(action)}
                             onChange={() => handleTogglePermission(module, action)}
+                            aria-label={`${MODULE_LABELS[module]} ${action} permission`}
                             className="h-4 w-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
                           />
                         </td>
