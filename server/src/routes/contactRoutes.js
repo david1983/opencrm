@@ -15,7 +15,7 @@ const router = express.Router();
 router.use(protect);
 
 router.route('/')
-  .get(paginationRules, getContacts)
+  .get(paginationRules, validate, getContacts)
   .post(contactRules, validate, createContact);
 
 router.route('/:id')

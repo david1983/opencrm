@@ -26,7 +26,6 @@ import attachmentRoutes from './routes/attachmentRoutes.js';
 import roleAdminRoutes from './routes/roleAdminRoutes.js';
 import connectedAppAdminRoutes from './routes/connectedAppAdminRoutes.js';
 import oauthRoutes from './routes/oauthRoutes.js';
-import objectRecordsRoutes from './routes/objectRecordsRoutes.js';
 
 // Import middleware
 import errorHandler from './middleware/error.js';
