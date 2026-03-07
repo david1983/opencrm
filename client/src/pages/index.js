@@ -12,3 +12,5 @@ export { default as OpportunityDetail } from './OpportunityDetail';
 export { default as ActivitiesList } from './ActivitiesList';
 export { default as TasksList } from './TasksList';
 export { default as ReportsPage } from './ReportsPage';
+export { default as CustomObjectList } from './CustomObjectList';
+export { default as CustomObjectDetail } from './CustomObjectDetail';

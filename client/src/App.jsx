@@ -17,6 +17,8 @@ import {
   ActivitiesList,
   TasksList,
   ReportsPage,
+  CustomObjectList,
+  CustomObjectDetail,
 } from './pages';
 import {
   OrganizationSettings,
@@ -98,6 +100,8 @@ function App() {
         <Route path="/activities" element={<ActivitiesList />} />
         <Route path="/tasks" element={<TasksList />} />
         <Route path="/reports" element={<ReportsPage />} />
+        <Route path="/objects/:objectName" element={<CustomObjectList />} />
+        <Route path="/objects/:objectName/:recordId" element={<CustomObjectDetail />} />
       </Route>
 
       {/* Admin routes */}
