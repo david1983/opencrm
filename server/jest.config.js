@@ -9,4 +9,8 @@ export default {
     '^(\\.{1,2}/.*)\\.js$': '$1',
   },
   testPathIgnorePatterns: ['/node_modules/'],
+  coveragePathIgnorePatterns: [
+    '/node_modules/',
+    '/src/config/passport.js', // OAuth configuration requires external credentials
+  ],
 };

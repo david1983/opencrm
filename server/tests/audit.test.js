@@ -102,6 +102,15 @@ describe('Audit Controller', () => {
       expect(response.status).toBe(200);
       expect(response.body.data).toEqual([]);
     });
+
+    it('should return 400 for invalid entity type', async () => {
+      const response = await request(app)
+        .get(`/api/audit/InvalidEntity/${accountId}`)
+        .set('Authorization', `Bearer ${token}`);
+
+      expect(response.status).toBe(400);
+      expect(response.body.message).toContain('Invalid entity type');
+    });
   });
 
   describe('GET /api/audit/recent', () => {
@@ -113,6 +122,29 @@ describe('Audit Controller', () => {
       expect(response.status).toBe(200);
       expect(response.body.status).toBe('success');
       expect(response.body.data).toBeDefined();
+    });
+
+    it('should respect limit parameter', async () => {
+      // Create additional audit logs
+      const additionalLogs = [];
+      for (let i = 0; i < 10; i++) {
+        additionalLogs.push({
+          entityType: 'Contact',
+          entityId: new mongoose.Types.ObjectId(),
+          action: 'create',
+          changes: [],
+          changedBy: userId,
+          organization: orgId,
+        });
+      }
+      await AuditLog.create(additionalLogs);
+
+      const response = await request(app)
+        .get('/api/audit/recent?limit=5')
+        .set('Authorization', `Bearer ${token}`);
+
+      expect(response.status).toBe(200);
+      expect(response.body.data.length).toBeLessThanOrEqual(5);
     });
   });
 });

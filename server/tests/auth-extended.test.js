@@ -89,9 +89,69 @@ describe('Auth Controller Extended', () => {
 
       expect(response.status).toBe(400);
     });
+
+    it('should create organization if none exists', async () => {
+      // Ensure no organizations exist
+      await Organization.deleteMany({});
+
+      const response = await request(app)
+        .post('/api/auth/register')
+        .send({
+          name: 'First User',
+          email: 'first@test.com',
+          password: 'password123',
+        });
+
+      expect(response.status).toBe(201);
+      expect(response.body.success).toBe(true);
+
+      // Verify organization was created
+      const orgs = await Organization.find({});
+      expect(orgs.length).toBe(1);
+    });
+
+    it('should use existing organization if one exists', async () => {
+      const existingOrg = await Organization.create({ name: 'Existing Org' });
+
+      const response = await request(app)
+        .post('/api/auth/register')
+        .send({
+          name: 'New User',
+          email: 'newuser@test.com',
+          password: 'password123',
+        });
+
+      expect(response.status).toBe(201);
+
+      // Verify user was added to existing organization
+      const user = await User.findOne({ email: 'newuser@test.com' });
+      expect(user.organization.toString()).toBe(existingOrg._id.toString());
+    });
   });
 
   describe('POST /api/auth/login - extended', () => {
+    it('should return 400 when email is missing', async () => {
+      const response = await request(app)
+        .post('/api/auth/login')
+        .send({
+          password: 'password123',
+        });
+
+      expect(response.status).toBe(400);
+      expect(response.body.error || response.body.errors).toBeDefined();
+    });
+
+    it('should return 400 when password is missing', async () => {
+      const response = await request(app)
+        .post('/api/auth/login')
+        .send({
+          email: 'test@test.com',
+        });
+
+      expect(response.status).toBe(400);
+      expect(response.body.error || response.body.errors).toBeDefined();
+    });
+
     it('should return 401 for invalid credentials', async () => {
       const org = await Organization.create({ name: 'Test Org' });
       await User.create({
@@ -120,6 +180,40 @@ describe('Auth Controller Extended', () => {
         });
 
       expect(response.status).toBe(401);
+    });
+
+    it('should return 401 for OAuth user trying password login', async () => {
+      const org = await Organization.create({ name: 'Test Org' });
+      // Create user without password (OAuth user)
+      await User.create({
+        name: 'OAuth User',
+        email: 'oauth@test.com',
+        // No password
+        provider: 'google',
+        providerId: '12345',
+        organization: org._id,
+      });
+
+      const response = await request(app)
+        .post('/api/auth/login')
+        .send({
+          email: 'oauth@test.com',
+          password: 'password123',
+        });
+
+      expect(response.status).toBe(401);
+      expect(response.body.error).toBe('Please use OAuth to login');
+    });
+  });
+
+  describe('POST /api/auth/logout', () => {
+    it('should logout successfully', async () => {
+      const response = await request(app)
+        .post('/api/auth/logout');
+
+      expect(response.status).toBe(200);
+      expect(response.body.success).toBe(true);
+      expect(response.body.message).toBe('Logged out successfully');
     });
   });
 });

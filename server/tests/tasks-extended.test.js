@@ -3,10 +3,11 @@ import mongoose from 'mongoose';
 import createApp from '../src/app.js';
 import User from '../src/models/User.js';
 import Organization from '../src/models/Organization.js';
+import Task from '../src/models/Task.js';
 import Account from '../src/models/Account.js';
 import Contact from '../src/models/Contact.js';
 
-describe('Contact Controller - Extended', () => {
+describe('Task Controller - Extended', () => {
   let app;
   let token;
   let userId;
@@ -14,6 +15,7 @@ describe('Contact Controller - Extended', () => {
   let adminId;
   let orgId;
   let accountId;
+  let contactId;
 
   beforeAll(async () => {
     app = createApp;
@@ -27,6 +29,7 @@ describe('Contact Controller - Extended', () => {
   beforeEach(async () => {
     await User.deleteMany({});
     await Organization.deleteMany({});
+    await Task.deleteMany({});
     await Account.deleteMany({});
     await Contact.deleteMany({});
 
@@ -57,6 +60,15 @@ describe('Contact Controller - Extended', () => {
     });
     accountId = account._id;
 
+    const contact = await Contact.create({
+      firstName: 'Test',
+      lastName: 'Contact',
+      email: 'contact@test.com',
+      owner: userId,
+      organization: orgId,
+    });
+    contactId = contact._id;
+
     const response = await request(app)
       .post('/api/auth/login')
       .send({ email: 'test@test.com', password: 'password123' });
@@ -68,113 +80,122 @@ describe('Contact Controller - Extended', () => {
     adminToken = adminResponse.body.token;
   });
 
-  describe('GET /api/contacts', () => {
+  describe('GET /api/tasks', () => {
     beforeEach(async () => {
-      await Contact.create([
+      await Task.create([
         {
-          firstName: 'John',
-          lastName: 'Doe',
-          email: 'john@test.com',
+          subject: 'Task 1',
           owner: userId,
           organization: orgId,
+          dueDate: new Date(),
+          status: 'Not Started',
+          priority: 'High',
           account: accountId,
         },
         {
-          firstName: 'Jane',
-          lastName: 'Smith',
-          email: 'jane@test.com',
+          subject: 'Task 2',
           owner: userId,
           organization: orgId,
-          account: accountId,
+          dueDate: new Date(),
+          status: 'In Progress',
+          priority: 'Normal',
+          contact: contactId,
         },
         {
-          firstName: 'Bob',
-          lastName: 'Wilson',
-          email: 'bob@test.com',
+          subject: 'Task 3',
           owner: userId,
           organization: orgId,
+          dueDate: new Date(),
+          status: 'Completed',
+          priority: 'Low',
         },
       ]);
     });
 
-    it('should return all contacts with pagination', async () => {
+    it('should filter tasks by status', async () => {
       const response = await request(app)
-        .get('/api/contacts')
+        .get('/api/tasks?status=Not Started')
         .set('Authorization', `Bearer ${token}`);
 
       expect(response.status).toBe(200);
-      expect(response.body.success).toBe(true);
-      expect(response.body.data.length).toBe(3);
-      expect(response.body.pagination).toBeDefined();
-      expect(response.body.pagination.total).toBe(3);
+      expect(response.body.data.every(t => t.status === 'Not Started')).toBe(true);
     });
 
-    it('should search contacts by name', async () => {
+    it('should filter tasks by priority', async () => {
       const response = await request(app)
-        .get('/api/contacts?search=John')
+        .get('/api/tasks?priority=High')
+        .set('Authorization', `Bearer ${token}`);
+
+      expect(response.status).toBe(200);
+      expect(response.body.data.every(t => t.priority === 'High')).toBe(true);
+    });
+
+    it('should filter tasks by contact', async () => {
+      const response = await request(app)
+        .get(`/api/tasks?contact=${contactId}`)
         .set('Authorization', `Bearer ${token}`);
 
       expect(response.status).toBe(200);
       expect(response.body.data.length).toBe(1);
-      expect(response.body.data[0].firstName).toBe('John');
     });
 
-    it('should filter contacts by account', async () => {
+    it('should filter tasks by account', async () => {
       const response = await request(app)
-        .get(`/api/contacts?account=${accountId}`)
+        .get(`/api/tasks?account=${accountId}`)
         .set('Authorization', `Bearer ${token}`);
 
       expect(response.status).toBe(200);
-      expect(response.body.data.length).toBe(2);
+      expect(response.body.data.length).toBe(1);
     });
 
-    it('should return empty array for no matches', async () => {
+    it('should return pagination info', async () => {
       const response = await request(app)
-        .get('/api/contacts?search=nonexistent')
+        .get('/api/tasks?page=1&limit=2')
         .set('Authorization', `Bearer ${token}`);
 
       expect(response.status).toBe(200);
-      expect(response.body.data.length).toBe(0);
+      expect(response.body.pagination).toBeDefined();
+      expect(response.body.pagination.page).toBe(1);
+      expect(response.body.pagination.limit).toBe(2);
     });
   });
 
-  describe('GET /api/contacts/:id', () => {
-    let contactId;
+  describe('GET /api/tasks/:id', () => {
+    let taskId;
 
     beforeEach(async () => {
-      const contact = await Contact.create({
-        firstName: 'Test',
-        lastName: 'Contact',
-        email: 'testcontact@test.com',
+      const task = await Task.create({
+        subject: 'Test Task',
         owner: userId,
         organization: orgId,
-        account: accountId,
+        dueDate: new Date(),
+        status: 'Not Started',
       });
-      contactId = contact._id;
+      taskId = task._id;
     });
 
-    it('should return a single contact', async () => {
+    it('should return task details', async () => {
       const response = await request(app)
-        .get(`/api/contacts/${contactId}`)
+        .get(`/api/tasks/${taskId}`)
         .set('Authorization', `Bearer ${token}`);
 
       expect(response.status).toBe(200);
       expect(response.body.success).toBe(true);
-      expect(response.body.data.firstName).toBe('Test');
+      expect(response.body.data.subject).toBe('Test Task');
     });
 
-    it('should return 404 for non-existent contact', async () => {
+    it('should return 404 for non-existent task', async () => {
       const response = await request(app)
-        .get('/api/contacts/507f1f77bcf86cd799439011')
+        .get('/api/tasks/507f1f77bcf86cd799439011')
         .set('Authorization', `Bearer ${token}`);
 
       expect(response.status).toBe(404);
-      expect(response.body.error).toBe('Contact not found');
+      expect(response.body.error).toBe('Task not found');
     });
   });
 
-  describe('PUT /api/contacts/:id', () => {
-    let contactId;
+  describe('PUT /api/tasks/:id', () => {
+    let taskId;
     let otherUserId;
 
     beforeEach(async () => {
@@ -186,49 +207,49 @@ describe('Contact Controller - Extended', () => {
       });
       otherUserId = otherUser._id;
 
-      const contact = await Contact.create({
-        firstName: 'Original',
-        lastName: 'Name',
-        email: 'original@test.com',
+      const task = await Task.create({
+        subject: 'Original Task',
         owner: otherUserId,
         organization: orgId,
+        dueDate: new Date(),
+        status: 'Not Started',
       });
-      contactId = contact._id;
+      taskId = task._id;
     });
 
-    it('should return 404 for non-existent contact update', async () => {
+    it('should return 404 for non-existent task update', async () => {
       const response = await request(app)
-        .put('/api/contacts/507f1f77bcf86cd799439011')
+        .put('/api/tasks/507f1f77bcf86cd799439011')
         .set('Authorization', `Bearer ${token}`)
-        .send({ firstName: 'Updated', lastName: 'Name', email: 'test@test.com' });
+        .send({ subject: 'Updated', dueDate: '2024-12-31', status: 'In Progress' });
 
       expect(response.status).toBe(404);
-      expect(response.body.error).toBe('Contact not found');
+      expect(response.body.error).toBe('Task not found');
     });
 
-    it('should return 403 when updating another users contact', async () => {
+    it('should return 403 when updating another users task', async () => {
       const response = await request(app)
-        .put(`/api/contacts/${contactId}`)
+        .put(`/api/tasks/${taskId}`)
         .set('Authorization', `Bearer ${token}`)
-        .send({ firstName: 'Updated', lastName: 'Name', email: 'test@test.com' });
+        .send({ subject: 'Unauthorized Update', dueDate: '2024-12-31', status: 'In Progress' });
 
       expect(response.status).toBe(403);
-      expect(response.body.error).toBe('Not authorized to update this contact');
+      expect(response.body.error).toBe('Not authorized to update this task');
     });
 
-    it('should allow admin to update any contact', async () => {
+    it('should allow admin to update any task', async () => {
       const response = await request(app)
-        .put(`/api/contacts/${contactId}`)
+        .put(`/api/tasks/${taskId}`)
         .set('Authorization', `Bearer ${adminToken}`)
-        .send({ firstName: 'Admin', lastName: 'Updated', email: 'admin@test.com' });
+        .send({ subject: 'Admin Updated', dueDate: '2024-12-31', status: 'In Progress' });
 
       expect(response.status).toBe(200);
-      expect(response.body.data.firstName).toBe('Admin');
+      expect(response.body.data.subject).toBe('Admin Updated');
     });
   });
 
-  describe('DELETE /api/contacts/:id', () => {
-    let contactId;
+  describe('DELETE /api/tasks/:id', () => {
+    let taskId;
     let otherUserId;
 
     beforeEach(async () => {
@@ -240,42 +261,42 @@ describe('Contact Controller - Extended', () => {
       });
       otherUserId = otherUser._id;
 
-      const contact = await Contact.create({
-        firstName: 'To',
-        lastName: 'Delete',
-        email: 'delete@test.com',
+      const task = await Task.create({
+        subject: 'Test Task',
         owner: otherUserId,
         organization: orgId,
+        dueDate: new Date(),
+        status: 'Not Started',
       });
-      contactId = contact._id;
+      taskId = task._id;
     });
 
-    it('should return 404 for non-existent contact delete', async () => {
+    it('should return 404 for non-existent task delete', async () => {
       const response = await request(app)
-        .delete('/api/contacts/507f1f77bcf86cd799439011')
+        .delete('/api/tasks/507f1f77bcf86cd799439011')
         .set('Authorization', `Bearer ${token}`);
 
       expect(response.status).toBe(404);
-      expect(response.body.error).toBe('Contact not found');
+      expect(response.body.error).toBe('Task not found');
     });
 
-    it('should return 403 when deleting another users contact', async () => {
+    it('should return 403 when deleting another users task', async () => {
       const response = await request(app)
-        .delete(`/api/contacts/${contactId}`)
+        .delete(`/api/tasks/${taskId}`)
         .set('Authorization', `Bearer ${token}`);
 
       expect(response.status).toBe(403);
-      expect(response.body.error).toBe('Not authorized to delete this contact');
+      expect(response.body.error).toBe('Not authorized to delete this task');
     });
 
-    it('should allow admin to delete any contact', async () => {
+    it('should allow admin to delete any task', async () => {
       const response = await request(app)
-        .delete(`/api/contacts/${contactId}`)
+        .delete(`/api/tasks/${taskId}`)
         .set('Authorization', `Bearer ${adminToken}`);
 
       expect(response.status).toBe(200);
 
-      const deleted = await Contact.findById(contactId);
+      const deleted = await Task.findById(taskId);
       expect(deleted).toBeNull();
     });
   });

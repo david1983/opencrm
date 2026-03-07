@@ -76,6 +76,53 @@ describe('Attachment Controller - Extended', () => {
 
       expect(response.status).toBe(404);
     });
+
+    it('should download attachment with content', async () => {
+      const attachment = await Attachment.create({
+        filename: 'test.pdf',
+        originalName: 'test.pdf',
+        mimeType: 'application/pdf',
+        size: 1024,
+        content: Buffer.from('test file content'),
+        parentType: 'Account',
+        parentId: accountId,
+        owner: userId,
+        organization: orgId,
+      });
+
+      const response = await request(app)
+        .get(`/api/attachments/${attachment._id}`)
+        .set('Authorization', `Bearer ${token}`);
+
+      expect(response.status).toBe(200);
+      expect(response.headers['content-type']).toBe('application/pdf');
+      expect(response.headers['content-disposition']).toContain('attachment');
+      expect(response.headers['content-disposition']).toContain('test.pdf');
+    });
+
+    it('should return attachment metadata with meta query param', async () => {
+      const attachment = await Attachment.create({
+        filename: 'test.pdf',
+        originalName: 'test.pdf',
+        mimeType: 'application/pdf',
+        size: 1024,
+        content: Buffer.from('test file content'),
+        parentType: 'Account',
+        parentId: accountId,
+        owner: userId,
+        organization: orgId,
+      });
+
+      const response = await request(app)
+        .get(`/api/attachments/${attachment._id}?meta=true`)
+        .set('Authorization', `Bearer ${token}`);
+
+      expect(response.status).toBe(200);
+      expect(response.body.success).toBe(true);
+      expect(response.body.data.originalName).toBe('test.pdf');
+      expect(response.body.data.mimeType).toBe('application/pdf');
+      expect(response.body.data.size).toBe(1024);
+    });
   });
 
   describe('DELETE /api/attachments/:id', () => {
@@ -127,6 +174,32 @@ describe('Attachment Controller - Extended', () => {
   });
 
   describe('POST /api/attachments (file upload)', () => {
+    it('should successfully upload a file', async () => {
+      const response = await request(app)
+        .post('/api/attachments')
+        .set('Authorization', `Bearer ${token}`)
+        .field('parentType', 'Account')
+        .field('parentId', accountId.toString())
+        .attach('file', Buffer.from('test file content'), { filename: 'test.txt', contentType: 'text/plain' });
+
+      expect(response.status).toBe(201);
+      expect(response.body.success).toBe(true);
+      expect(response.body.data.originalName).toBe('test.txt');
+      expect(response.body.data.mimeType).toBe('text/plain');
+    });
+
+    it('should upload PDF file', async () => {
+      const response = await request(app)
+        .post('/api/attachments')
+        .set('Authorization', `Bearer ${token}`)
+        .field('parentType', 'Account')
+        .field('parentId', accountId.toString())
+        .attach('file', Buffer.from('%PDF-1.4 test'), { filename: 'test.pdf', contentType: 'application/pdf' });
+
+      expect(response.status).toBe(201);
+      expect(response.body.data.mimeType).toBe('application/pdf');
+    });
+
     it('should return 400 when no file is uploaded', async () => {
       const response = await request(app)
         .post('/api/attachments')
