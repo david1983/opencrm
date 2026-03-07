@@ -45,7 +45,10 @@ export const getLeads = async (req, res, next) => {
 
 export const getLead = async (req, res, next) => {
   try {
-    const lead = await Lead.findById(req.params.id).populate('owner', 'name email');
+    const lead = await Lead.findOne({
+      _id: req.params.id,
+      owner: req.user.id,
+    }).populate('owner', 'name email');
 
     if (!lead) {
       return res.status(404).json({

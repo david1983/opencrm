@@ -52,7 +52,10 @@ export const getAttachments = async (req, res, next) => {
 // Get single attachment (with download)
 export const getAttachment = async (req, res, next) => {
   try {
-    const attachment = await Attachment.findById(req.params.id);
+    const attachment = await Attachment.findOne({
+      _id: req.params.id,
+      organization: req.user.organization,
+    });
 
     if (!attachment) {
       return res.status(404).json({
