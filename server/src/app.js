@@ -23,7 +23,7 @@ import searchRoutes from './routes/searchRoutes.js';
 import auditRoutes from './routes/auditRoutes.js';
 import noteRoutes from './routes/noteRoutes.js';
 import attachmentRoutes from './routes/attachmentRoutes.js';
-
+import roleAdminRoutes from './routes/roleAdminRoutes.js';
 // Import middleware
 import errorHandler from './middleware/error.js';
 
@@ -84,6 +84,7 @@ app.use('/api/reports', reportRoutes);
 app.use('/api/admin/organization', adminRoutes);
 app.use('/api/admin/setup', setupRoutes);
 app.use('/api/admin/users', userAdminRoutes);
+app.use('/api/admin/roles', roleAdminRoutes);
 app.use('/api/search', searchRoutes);
 app.use('/api/audit', auditRoutes);
 app.use('/api/notes', noteRoutes);
