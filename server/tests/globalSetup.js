@@ -11,8 +11,5 @@ export default async function globalSetup() {
   process.env.JWT_SECRET = 'test-secret-key';
   process.env.NODE_ENV = 'test';
 
-  // Store reference for teardown
   global.__MONGO_SERVER__ = mongoServer;
-
-  await mongoose.connect(uri);
 }

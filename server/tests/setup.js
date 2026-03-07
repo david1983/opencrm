@@ -25,7 +25,7 @@ export async function getAuthToken(app, user) {
   return response.body.token;
 }
 
-// Clear all collections between tests
+// Clear all collections after each test
 afterEach(async () => {
   const collections = mongoose.connection.collections;
   for (const key in collections) {

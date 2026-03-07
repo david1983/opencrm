@@ -17,9 +17,11 @@ describe('Auth Controller', () => {
   });
 
   beforeEach(async () => {
-    // Clear collections
-    await User.deleteMany({});
-    await Organization.deleteMany({});
+    // Clear all collections before each test
+    const collections = mongoose.connection.collections;
+    for (const key in collections) {
+      await collections[key].deleteMany({});
+    }
   });
 
   describe('POST /api/auth/register', () => {
@@ -53,10 +55,13 @@ describe('Auth Controller', () => {
     });
 
     it('should not register duplicate email', async () => {
+      const org = await Organization.create({ name: 'Test Org' });
+
       await User.create({
         name: 'Existing',
         email: 'existing@example.com',
         password: 'password123',
+        organization: org._id,
       });
 
       const response = await request(app)
