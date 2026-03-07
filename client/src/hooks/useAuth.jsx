@@ -34,12 +34,13 @@ export function AuthProvider({ children }) {
 
   const login = async (credentials) => {
     const response = await api.login(credentials);
-    if (response.success) {
-      api.setAuthToken(response.token);
-      setUser(response.user);
-      // Invalidate and refetch queries after login
-      queryClient.invalidateQueries();
+    if (!response.success) {
+      throw new Error(response.error || 'Login failed');
     }
+    api.setAuthToken(response.token);
+    setUser(response.user);
+    // Invalidate and refetch queries after login
+    queryClient.invalidateQueries();
     return response;
   };
 
