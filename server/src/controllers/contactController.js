@@ -42,7 +42,10 @@ export const getContacts = async (req, res, next) => {
 
 export const getContact = async (req, res, next) => {
   try {
-    const contact = await Contact.findById(req.params.id)
+    const contact = await Contact.findOne({
+      _id: req.params.id,
+      owner: req.user.id,
+    })
       .populate('owner', 'name email')
       .populate('account', 'name industry phone website');
 

@@ -33,8 +33,10 @@ export const getNotes = async (req, res, next) => {
 // Get single note
 export const getNote = async (req, res, next) => {
   try {
-    const note = await Note.findById(req.params.id)
-      .populate('owner', 'name email');
+    const note = await Note.findOne({
+      _id: req.params.id,
+      organization: req.user.organization,
+    }).populate('owner', 'name email');
 
     if (!note) {
       return res.status(404).json({

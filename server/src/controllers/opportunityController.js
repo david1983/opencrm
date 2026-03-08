@@ -46,7 +46,10 @@ export const getOpportunities = async (req, res, next) => {
 
 export const getOpportunity = async (req, res, next) => {
   try {
-    const opportunity = await Opportunity.findById(req.params.id)
+    const opportunity = await Opportunity.findOne({
+      _id: req.params.id,
+      owner: req.user.id,
+    })
       .populate('owner', 'name email')
       .populate('account', 'name industry phone website');
 

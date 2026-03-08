@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import Lead from '../models/Lead.js';
 import { createAuditLog, detectChanges } from '../utils/audit.js';
 
@@ -45,7 +46,10 @@ export const getLeads = async (req, res, next) => {
 
 export const getLead = async (req, res, next) => {
   try {
-    const lead = await Lead.findById(req.params.id).populate('owner', 'name email');
+    const lead = await Lead.findOne({
+      _id: req.params.id,
+      owner: req.user.id,
+    }).populate('owner', 'name email');
 
     if (!lead) {
       return res.status(404).json({
@@ -179,28 +183,48 @@ export const deleteLead = async (req, res, next) => {
 };
 
 export const convertLead = async (req, res, next) => {
+  // Attempt to start a MongoDB transaction. Transactions require a replica set;
+  // on a standalone instance (e.g., mongodb-memory-server in tests) the driver
+  // allows startSession/startTransaction but then throws
+  // "Transaction numbers are only allowed on a replica set member or mongos"
+  // on the first query that uses the session. We probe for replica-set support
+  // with a lightweight hello command and fall back gracefully when unavailable.
+  //
+  // NOTE: Testing transaction rollback behaviour requires a replica set and cannot
+  // be exercised with the current mongodb-memory-server standalone test setup.
+  let session = null;
   try {
-    const lead = await Lead.findById(req.params.id);
+    const adminDb = mongoose.connection.db.admin();
+    const hello = await adminDb.command({ hello: 1 });
+    const hasReplicaSet = !!(hello.setName || hello.hosts);
+    if (hasReplicaSet) {
+      session = await mongoose.startSession();
+      session.startTransaction();
+    }
+  } catch {
+    // Could not determine replica set status — proceed without a transaction.
+    session = null;
+  }
+
+  // Helper: merge session into options when a session is available.
+  const withSession = (opts = {}) => (session ? { ...opts, session } : opts);
+
+  try {
+    const lead = await Lead.findById(req.params.id).session(session);
 
     if (!lead) {
-      return res.status(404).json({
-        success: false,
-        error: 'Lead not found',
-      });
+      if (session) await session.abortTransaction();
+      return res.status(404).json({ success: false, error: 'Lead not found' });
     }
 
     if (lead.owner.toString() !== req.user.id && req.user.role !== 'admin') {
-      return res.status(403).json({
-        success: false,
-        error: 'Not authorized to convert this lead',
-      });
+      if (session) await session.abortTransaction();
+      return res.status(403).json({ success: false, error: 'Not authorized to convert this lead' });
     }
 
     if (lead.status === 'Converted') {
-      return res.status(400).json({
-        success: false,
-        error: 'Lead has already been converted',
-      });
+      if (session) await session.abortTransaction();
+      return res.status(400).json({ success: false, error: 'Lead has already been converted' });
     }
 
     // Import models dynamically to avoid circular dependencies
@@ -216,15 +240,14 @@ export const convertLead = async (req, res, next) => {
 
     // Create or use existing account
     if (createAccount && accountName) {
-      account = await Account.create({
+      [account] = await Account.create([{
         name: accountName,
         industry: lead.industry || 'Other',
         website: lead.website || '',
         phone: lead.phone || '',
         owner: req.user.id,
-      });
+      }], withSession());
 
-      // Create audit log for new account
       await createAuditLog({
         entityType: 'Account',
         entityId: account._id,
@@ -236,7 +259,7 @@ export const convertLead = async (req, res, next) => {
     }
 
     // Create contact
-    contact = await Contact.create({
+    [contact] = await Contact.create([{
       firstName: lead.firstName,
       lastName: lead.lastName,
       email: lead.email,
@@ -245,9 +268,8 @@ export const convertLead = async (req, res, next) => {
       account: account?._id || null,
       owner: req.user.id,
       leadSource: lead.source,
-    });
+    }], withSession());
 
-    // Create audit log for new contact
     await createAuditLog({
       entityType: 'Contact',
       entityId: contact._id,
@@ -262,7 +284,7 @@ export const convertLead = async (req, res, next) => {
 
     // Create opportunity if requested
     if (createOpportunity && opportunityName && account) {
-      opportunity = await Opportunity.create({
+      [opportunity] = await Opportunity.create([{
         name: opportunityName,
         account: account._id,
         stage: 'Prospecting',
@@ -270,9 +292,8 @@ export const convertLead = async (req, res, next) => {
         amount: 0,
         closeDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
         owner: req.user.id,
-      });
+      }], withSession());
 
-      // Create audit log for new opportunity
       await createAuditLog({
         entityType: 'Opportunity',
         entityId: opportunity._id,
@@ -292,30 +313,27 @@ export const convertLead = async (req, res, next) => {
       contact: contact._id,
       opportunity: opportunity?._id,
     };
-    await lead.save();
+    await lead.save(withSession());
 
-    // Create audit log for lead conversion
     await createAuditLog({
       entityType: 'Lead',
       entityId: lead._id,
       action: 'convert',
-      changes: [
-        { field: 'status', oldValue: oldLead.status, newValue: 'Converted' },
-      ],
+      changes: [{ field: 'status', oldValue: oldLead.status, newValue: 'Converted' }],
       userId: req.user.id,
       organizationId: req.user.organization,
     });
 
+    if (session) await session.commitTransaction();
+
     res.status(200).json({
       success: true,
-      data: {
-        lead,
-        account,
-        contact,
-        opportunity,
-      },
+      data: { lead, account, contact, opportunity },
     });
   } catch (error) {
+    if (session) await session.abortTransaction();
     next(error);
+  } finally {
+    if (session) session.endSession();
   }
 };

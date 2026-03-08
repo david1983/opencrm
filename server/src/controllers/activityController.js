@@ -52,7 +52,10 @@ export const getActivities = async (req, res, next) => {
 
 export const getActivity = async (req, res, next) => {
   try {
-    const activity = await Activity.findById(req.params.id)
+    const activity = await Activity.findOne({
+      _id: req.params.id,
+      owner: req.user.id,
+    })
       .populate('owner', 'name email')
       .populate('contact', 'firstName lastName email phone')
       .populate('account', 'name industry')

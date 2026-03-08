@@ -56,7 +56,10 @@ export const getTasks = async (req, res, next) => {
 
 export const getTask = async (req, res, next) => {
   try {
-    const task = await Task.findById(req.params.id)
+    const task = await Task.findOne({
+      _id: req.params.id,
+      owner: req.user.id,
+    })
       .populate('owner', 'name email')
       .populate('contact', 'firstName lastName email phone')
       .populate('account', 'name industry')

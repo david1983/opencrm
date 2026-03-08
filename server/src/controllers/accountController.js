@@ -47,8 +47,10 @@ export const getAccounts = async (req, res, next) => {
 // @route   GET /api/accounts/:id
 export const getAccount = async (req, res, next) => {
   try {
-    const account = await Account.findById(req.params.id)
-      .populate('owner', 'name email');
+    const account = await Account.findOne({
+      _id: req.params.id,
+      owner: req.user.id,
+    }).populate('owner', 'name email');
 
     if (!account) {
       return res.status(404).json({
