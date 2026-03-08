@@ -2,6 +2,7 @@ import passport from 'passport';
 import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
 import { Strategy as GitHubStrategy } from 'passport-github2';
 import User from '../models/User.js';
+import Organization from '../models/Organization.js';
 
 passport.serializeUser((user, done) => {
   done(null, user.id);
@@ -15,6 +16,15 @@ passport.deserializeUser(async (id, done) => {
     done(error, null);
   }
 });
+
+// Helper to get or create default organization
+async function getOrCreateDefaultOrganization() {
+  let organization = await Organization.findOne();
+  if (!organization) {
+    organization = await Organization.create({ name: 'Default Organization' });
+  }
+  return organization;
+}
 
 // Google OAuth Strategy
 if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
@@ -37,12 +47,16 @@ if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
               user.avatar = user.avatar || profile.photos[0]?.value;
               await user.save();
             } else {
+              // Get or create default organization for new OAuth users
+              const organization = await getOrCreateDefaultOrganization();
+
               user = await User.create({
                 googleId: profile.id,
                 email: profile.emails[0].value,
                 name: profile.displayName,
                 avatar: profile.photos[0]?.value,
                 role: 'user',
+                organization: organization._id,
               });
             }
           }
@@ -78,12 +92,16 @@ if (process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_SECRET) {
               user.avatar = user.avatar || profile.photos[0]?.value;
               await user.save();
             } else {
+              // Get or create default organization for new OAuth users
+              const organization = await getOrCreateDefaultOrganization();
+
               user = await User.create({
                 githubId: profile.id,
                 email,
                 name: profile.displayName || profile.username,
                 avatar: profile.photos[0]?.value,
                 role: 'user',
+                organization: organization._id,
               });
             }
           }

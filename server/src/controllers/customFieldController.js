@@ -16,6 +16,19 @@ export const getCustomFields = async (req, res, next) => {
   try {
     const { objectId } = req.params;
 
+    // Verify object belongs to user's organization
+    const object = await CustomObject.findOne({
+      _id: objectId,
+      organization: req.user.organization,
+    });
+
+    if (!object) {
+      return res.status(404).json({
+        success: false,
+        error: 'Object not found',
+      });
+    }
+
     const fields = await CustomField.find({ object: objectId }).sort({ order: 1, createdAt: 1 });
 
     res.status(200).json({
@@ -38,6 +51,19 @@ export const getCustomField = async (req, res, next) => {
       });
     }
 
+    // Verify object belongs to user's organization
+    const object = await CustomObject.findOne({
+      _id: field.object._id,
+      organization: req.user.organization,
+    });
+
+    if (!object) {
+      return res.status(404).json({
+        success: false,
+        error: 'Field not found',
+      });
+    }
+
     res.status(200).json({
       success: true,
       data: field,
@@ -51,8 +77,11 @@ export const createCustomField = async (req, res, next) => {
   try {
     const { object: objectId, name, label, type, required, unique, defaultValue, options, lookupObject, validation, description } = req.body;
 
-    // Check if object exists
-    const object = await CustomObject.findById(objectId);
+    // Check if object exists and belongs to user's organization
+    const object = await CustomObject.findOne({
+      _id: objectId,
+      organization: req.user.organization,
+    });
     if (!object) {
       return res.status(404).json({
         success: false,
@@ -101,9 +130,22 @@ export const updateCustomField = async (req, res, next) => {
   try {
     const { label, required, unique, defaultValue, options, lookupObject, validation, description, active } = req.body;
 
-    let field = await CustomField.findById(req.params.id);
+    let field = await CustomField.findById(req.params.id).populate('object');
 
     if (!field) {
+      return res.status(404).json({
+        success: false,
+        error: 'Field not found',
+      });
+    }
+
+    // Verify object belongs to user's organization
+    const object = await CustomObject.findOne({
+      _id: field.object._id,
+      organization: req.user.organization,
+    });
+
+    if (!object) {
       return res.status(404).json({
         success: false,
         error: 'Field not found',
@@ -137,9 +179,22 @@ export const updateCustomField = async (req, res, next) => {
 
 export const deleteCustomField = async (req, res, next) => {
   try {
-    const field = await CustomField.findById(req.params.id);
+    const field = await CustomField.findById(req.params.id).populate('object');
 
     if (!field) {
+      return res.status(404).json({
+        success: false,
+        error: 'Field not found',
+      });
+    }
+
+    // Verify object belongs to user's organization
+    const object = await CustomObject.findOne({
+      _id: field.object._id,
+      organization: req.user.organization,
+    });
+
+    if (!object) {
       return res.status(404).json({
         success: false,
         error: 'Field not found',
@@ -169,6 +224,19 @@ export const reorderFields = async (req, res, next) => {
   try {
     const { objectId } = req.params;
     const { fieldOrder } = req.body; // Array of field IDs in new order
+
+    // Verify object belongs to user's organization
+    const object = await CustomObject.findOne({
+      _id: objectId,
+      organization: req.user.organization,
+    });
+
+    if (!object) {
+      return res.status(404).json({
+        success: false,
+        error: 'Object not found',
+      });
+    }
 
     // Update order for each field
     await Promise.all(
