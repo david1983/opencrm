@@ -1,3 +1,4 @@
+import { DocumentTextIcon, ExternalLinkIcon, KeyIcon } from '@heroicons/react/24/outline';
 import { Card, CardHeader, CardBody, Button, Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../../components/ui';
 
 const endpointCategories = [
@@ -41,11 +42,15 @@ export default function ApiDocs() {
   return (
     <div className="max-w-4xl">
       <div className="mb-6 flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold text-gray-900">API Documentation</h1>
-          <p className="text-gray-500 mt-1">Explore and test the OpenCRM API using Swagger UI</p>
+        <div className="flex items-center gap-3">
+          <DocumentTextIcon className="h-8 w-8 text-primary-600" />
+          <div>
+            <h1 className="text-2xl font-semibold text-gray-900">API Documentation</h1>
+            <p className="text-gray-500 mt-1">Explore and test the OpenCRM API using Swagger UI</p>
+          </div>
         </div>
         <Button onClick={handleOpenSwagger}>
+          <ExternalLinkIcon className="h-5 w-5 mr-2" />
           Open Swagger UI
         </Button>
       </div>
@@ -76,7 +81,10 @@ export default function ApiDocs() {
       {/* Authentication Instructions Card */}
       <Card className="mb-6">
         <CardHeader>
-          <h2 className="text-lg font-medium text-gray-900">Authentication Instructions</h2>
+          <div className="flex items-center gap-2">
+            <KeyIcon className="h-5 w-5 text-gray-500" />
+            <h2 className="text-lg font-medium text-gray-900">Authentication Instructions</h2>
+          </div>
         </CardHeader>
         <CardBody>
           <p className="text-gray-600 mb-4">
