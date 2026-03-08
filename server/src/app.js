@@ -31,6 +31,10 @@ import oauthRoutes from './routes/oauthRoutes.js';
 import objectRecordsRoutes from './routes/objectRecordsRoutes.js';
 import cloudStorageAdminRoutes from './routes/cloudStorageAdminRoutes.js';
 
+// Import Swagger
+import swaggerUi from 'swagger-ui-express';
+import { swaggerSpec } from './docs/index.js';
+
 // Import middleware
 import errorHandler from './middleware/error.js';
 
@@ -67,17 +71,26 @@ if (process.env.NODE_ENV === 'development') {
   app.use(morgan('dev'));
 }
 
+// Health check (public, before rate limiter)
+app.get('/health', (req, res) => {
+  res.status(200).json({ status: 'ok' });
+});
+
+// Swagger API Documentation (public, before rate limiter)
+app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+
+// Serve raw spec as JSON
+app.get('/api/docs/swagger.json', (req, res) => {
+  res.setHeader('Content-Type', 'application/json');
+  res.send(swaggerSpec);
+});
+
 // Rate limiting
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 100, // limit each IP to 100 requests per windowMs
 });
 app.use('/api/', limiter);
-
-// Health check
-app.get('/health', (req, res) => {
-  res.status(200).json({ status: 'ok' });
-});
 
 // Mount routes
 app.use('/api/auth', authRoutes);
