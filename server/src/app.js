@@ -29,6 +29,7 @@ import roleAdminRoutes from './routes/roleAdminRoutes.js';
 import connectedAppAdminRoutes from './routes/connectedAppAdminRoutes.js';
 import oauthRoutes from './routes/oauthRoutes.js';
 import objectRecordsRoutes from './routes/objectRecordsRoutes.js';
+import cloudStorageAdminRoutes from './routes/cloudStorageAdminRoutes.js';
 
 // Import middleware
 import errorHandler from './middleware/error.js';
@@ -98,6 +99,24 @@ app.use('/api/audit', auditRoutes);
 app.use('/api/notes', noteRoutes);
 app.use('/api/attachments', attachmentRoutes);
 app.use('/api/objects', objectRecordsRoutes);
+app.use('/api/admin/cloud-storage', cloudStorageAdminRoutes);
+
+// Serve static files in production
+if (process.env.NODE_ENV === 'production') {
+  const __filename = fileURLToPath(import.meta.url);
+  const __dirname = path.dirname(__filename);
+  const clientPath = path.join(__dirname, '../../client/dist');
+
+  app.use(express.static(clientPath));
+
+  // Handle SPA routing - send all non-API routes to index.html
+  app.get('*', (req, res, next) => {
+    if (req.path.startsWith('/api')) {
+      return next();
+    }
+    res.sendFile(path.join(clientPath, 'index.html'));
+  });
+}
 
 // Serve static files in production
 if (process.env.NODE_ENV === 'production') {

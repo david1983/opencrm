@@ -6,6 +6,7 @@ import {
   getAttachment,
   uploadAttachment,
   deleteAttachment,
+  getUploadStatus,
 } from '../controllers/attachmentController.js';
 
 const router = express.Router();
@@ -14,7 +15,7 @@ const router = express.Router();
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: {
-    fileSize: 5 * 1024 * 1024, // 5MB limit
+    fileSize: 50 * 1024 * 1024, // 50MB limit
   },
 });
 
@@ -23,6 +24,7 @@ router.use(protect);
 
 // Attachment routes
 router.get('/', getAttachments);
+router.get('/upload-status/:id', getUploadStatus);
 router.get('/:id', getAttachment);
 router.post('/', upload.single('file'), uploadAttachment);
 router.delete('/:id', deleteAttachment);
