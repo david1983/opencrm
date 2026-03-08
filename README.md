@@ -487,9 +487,6 @@ We're actively developing OpenCRM. Here's what's planned:
 | **OAuth Login** | ✅ Google, GitHub | ✅ SSO | ✅ Google | ✅ Google |
 | **REST API** | ✅ Full | ✅ Full | ✅ Full | ✅ Full |
 | **No User Limits** | ✅ Unlimited | ❌ Per-seat | ⚠️ Limited | ❌ Per-seat |
-| **RBAC** | ✅ Custom Roles | ✅ Yes | ⚠️ Paid | ⚠️ Paid |
-| **Connected Apps** | ✅ OAuth & API Keys | ✅ Yes | ⚠️ Paid | ⚠️ Paid |
-| **Cloud Storage** | ✅ Google, Dropbox | ✅ Yes | ⚠️ Limited | ⚠️ Limited |
 
 ---
 
