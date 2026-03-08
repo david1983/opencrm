@@ -46,7 +46,10 @@ export const getOpportunities = async (req, res, next) => {
 
 export const getOpportunity = async (req, res, next) => {
   try {
-    const opportunity = await Opportunity.findById(req.params.id)
+    const opportunity = await Opportunity.findOne({
+      _id: req.params.id,
+      organization: req.user.organization,
+    })
       .populate('owner', 'name email')
       .populate('account', 'name industry phone website');
 
@@ -96,7 +99,10 @@ export const createOpportunity = async (req, res, next) => {
 
 export const updateOpportunity = async (req, res, next) => {
   try {
-    let opportunity = await Opportunity.findById(req.params.id);
+    let opportunity = await Opportunity.findOne({
+      _id: req.params.id,
+      organization: req.user.organization,
+    });
 
     if (!opportunity) {
       return res.status(404).json({
@@ -144,7 +150,10 @@ export const updateOpportunity = async (req, res, next) => {
 
 export const deleteOpportunity = async (req, res, next) => {
   try {
-    const opportunity = await Opportunity.findById(req.params.id);
+    const opportunity = await Opportunity.findOne({
+      _id: req.params.id,
+      organization: req.user.organization,
+    });
 
     if (!opportunity) {
       return res.status(404).json({

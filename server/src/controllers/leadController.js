@@ -45,7 +45,10 @@ export const getLeads = async (req, res, next) => {
 
 export const getLead = async (req, res, next) => {
   try {
-    const lead = await Lead.findById(req.params.id).populate('owner', 'name email');
+    const lead = await Lead.findOne({
+      _id: req.params.id,
+      organization: req.user.organization,
+    }).populate('owner', 'name email');
 
     if (!lead) {
       return res.status(404).json({
@@ -93,7 +96,10 @@ export const createLead = async (req, res, next) => {
 
 export const updateLead = async (req, res, next) => {
   try {
-    let lead = await Lead.findById(req.params.id);
+    let lead = await Lead.findOne({
+      _id: req.params.id,
+      organization: req.user.organization,
+    });
 
     if (!lead) {
       return res.status(404).json({
@@ -141,7 +147,10 @@ export const updateLead = async (req, res, next) => {
 
 export const deleteLead = async (req, res, next) => {
   try {
-    const lead = await Lead.findById(req.params.id);
+    const lead = await Lead.findOne({
+      _id: req.params.id,
+      organization: req.user.organization,
+    });
 
     if (!lead) {
       return res.status(404).json({
@@ -180,7 +189,10 @@ export const deleteLead = async (req, res, next) => {
 
 export const convertLead = async (req, res, next) => {
   try {
-    const lead = await Lead.findById(req.params.id);
+    const lead = await Lead.findOne({
+      _id: req.params.id,
+      organization: req.user.organization,
+    });
 
     if (!lead) {
       return res.status(404).json({

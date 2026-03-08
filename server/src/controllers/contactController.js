@@ -42,7 +42,10 @@ export const getContacts = async (req, res, next) => {
 
 export const getContact = async (req, res, next) => {
   try {
-    const contact = await Contact.findById(req.params.id)
+    const contact = await Contact.findOne({
+      _id: req.params.id,
+      organization: req.user.organization,
+    })
       .populate('owner', 'name email')
       .populate('account', 'name industry phone website');
 
@@ -92,7 +95,10 @@ export const createContact = async (req, res, next) => {
 
 export const updateContact = async (req, res, next) => {
   try {
-    let contact = await Contact.findById(req.params.id);
+    let contact = await Contact.findOne({
+      _id: req.params.id,
+      organization: req.user.organization,
+    });
 
     if (!contact) {
       return res.status(404).json({
@@ -140,7 +146,10 @@ export const updateContact = async (req, res, next) => {
 
 export const deleteContact = async (req, res, next) => {
   try {
-    const contact = await Contact.findById(req.params.id);
+    const contact = await Contact.findOne({
+      _id: req.params.id,
+      organization: req.user.organization,
+    });
 
     if (!contact) {
       return res.status(404).json({

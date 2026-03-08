@@ -52,7 +52,10 @@ export const getActivities = async (req, res, next) => {
 
 export const getActivity = async (req, res, next) => {
   try {
-    const activity = await Activity.findById(req.params.id)
+    const activity = await Activity.findOne({
+      _id: req.params.id,
+      organization: req.user.organization,
+    })
       .populate('owner', 'name email')
       .populate('contact', 'firstName lastName email phone')
       .populate('account', 'name industry')
@@ -90,7 +93,10 @@ export const createActivity = async (req, res, next) => {
 
 export const updateActivity = async (req, res, next) => {
   try {
-    let activity = await Activity.findById(req.params.id);
+    let activity = await Activity.findOne({
+      _id: req.params.id,
+      organization: req.user.organization,
+    });
 
     if (!activity) {
       return res.status(404).json({
@@ -122,7 +128,10 @@ export const updateActivity = async (req, res, next) => {
 
 export const deleteActivity = async (req, res, next) => {
   try {
-    const activity = await Activity.findById(req.params.id);
+    const activity = await Activity.findOne({
+      _id: req.params.id,
+      organization: req.user.organization,
+    });
 
     if (!activity) {
       return res.status(404).json({

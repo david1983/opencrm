@@ -9,7 +9,7 @@ export const getAccounts = async (req, res, next) => {
     const limit = parseInt(req.query.limit) || 20;
     const skip = (page - 1) * limit;
 
-    let query = { owner: req.user.id };
+    let query = { organization: req.user.organization };
 
     // Search functionality
     if (req.query.search) {
@@ -47,8 +47,10 @@ export const getAccounts = async (req, res, next) => {
 // @route   GET /api/accounts/:id
 export const getAccount = async (req, res, next) => {
   try {
-    const account = await Account.findById(req.params.id)
-      .populate('owner', 'name email');
+    const account = await Account.findOne({
+      _id: req.params.id,
+      organization: req.user.organization,
+    }).populate('owner', 'name email');
 
     if (!account) {
       return res.status(404).json({
@@ -100,7 +102,10 @@ export const createAccount = async (req, res, next) => {
 // @route   PUT /api/accounts/:id
 export const updateAccount = async (req, res, next) => {
   try {
-    let account = await Account.findById(req.params.id);
+    let account = await Account.findOne({
+      _id: req.params.id,
+      organization: req.user.organization,
+    });
 
     if (!account) {
       return res.status(404).json({
@@ -109,7 +114,7 @@ export const updateAccount = async (req, res, next) => {
       });
     }
 
-    // Make sure user owns the account
+    // Make sure user owns the account or is admin
     if (account.owner.toString() !== req.user.id && req.user.role !== 'admin') {
       return res.status(403).json({
         success: false,
@@ -151,7 +156,10 @@ export const updateAccount = async (req, res, next) => {
 // @route   DELETE /api/accounts/:id
 export const deleteAccount = async (req, res, next) => {
   try {
-    const account = await Account.findById(req.params.id);
+    const account = await Account.findOne({
+      _id: req.params.id,
+      organization: req.user.organization,
+    });
 
     if (!account) {
       return res.status(404).json({
@@ -160,7 +168,7 @@ export const deleteAccount = async (req, res, next) => {
       });
     }
 
-    // Make sure user owns the account
+    // Make sure user owns the account or is admin
     if (account.owner.toString() !== req.user.id && req.user.role !== 'admin') {
       return res.status(403).json({
         success: false,
