@@ -213,17 +213,17 @@ export const convertLead = async (req, res, next) => {
     const lead = await Lead.findById(req.params.id).session(session);
 
     if (!lead) {
-      if (session) { await session.abortTransaction(); session.endSession(); }
+      if (session) await session.abortTransaction();
       return res.status(404).json({ success: false, error: 'Lead not found' });
     }
 
     if (lead.owner.toString() !== req.user.id && req.user.role !== 'admin') {
-      if (session) { await session.abortTransaction(); session.endSession(); }
+      if (session) await session.abortTransaction();
       return res.status(403).json({ success: false, error: 'Not authorized to convert this lead' });
     }
 
     if (lead.status === 'Converted') {
-      if (session) { await session.abortTransaction(); session.endSession(); }
+      if (session) await session.abortTransaction();
       return res.status(400).json({ success: false, error: 'Lead has already been converted' });
     }
 
@@ -324,14 +324,16 @@ export const convertLead = async (req, res, next) => {
       organizationId: req.user.organization,
     });
 
-    if (session) { await session.commitTransaction(); session.endSession(); }
+    if (session) await session.commitTransaction();
 
     res.status(200).json({
       success: true,
       data: { lead, account, contact, opportunity },
     });
   } catch (error) {
-    if (session) { await session.abortTransaction(); session.endSession(); }
+    if (session) await session.abortTransaction();
     next(error);
+  } finally {
+    if (session) session.endSession();
   }
 };
