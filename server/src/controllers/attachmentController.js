@@ -1,8 +1,10 @@
 import Attachment from '../models/Attachment.js';
+import UploadQueue from '../models/UploadQueue.js';
+import ProviderFactory from '../services/cloud-storage/ProviderFactory.js';
 import { createAuditLog } from '../utils/audit.js';
 
-// Max file size (5MB)
-const MAX_FILE_SIZE = 5 * 1024 * 1024;
+// Max file size (50MB)
+const MAX_FILE_SIZE = 50 * 1024 * 1024;
 
 // Allowed file types
 const ALLOWED_TYPES = [
@@ -101,7 +103,7 @@ export const getAttachment = async (req, res, next) => {
 // Upload attachment
 export const uploadAttachment = async (req, res, next) => {
   try {
-    const { parentType, parentId } = req.body;
+    const { parentType, parentId, provider } = req.body;
 
     if (!parentType || !parentId) {
       return res.status(400).json({
@@ -121,7 +123,7 @@ export const uploadAttachment = async (req, res, next) => {
     if (req.file.size > MAX_FILE_SIZE) {
       return res.status(400).json({
         success: false,
-        error: 'File size exceeds 5MB limit',
+        error: 'File size exceeds 50MB limit',
       });
     }
 
@@ -133,17 +135,48 @@ export const uploadAttachment = async (req, res, next) => {
       });
     }
 
+    // Determine storage type
+    const storageType = provider && ProviderFactory.isValidProvider(provider)
+      ? provider
+      : 'local';
+
+    // Create attachment
     const attachment = await Attachment.create({
       filename: req.file.filename || req.file.originalname,
       originalName: req.file.originalname,
       mimeType: req.file.mimetype,
       size: req.file.size,
-      content: req.file.buffer,
+      content: storageType === 'local' ? req.file.buffer : undefined,
       parentType,
       parentId,
       owner: req.user.id,
       organization: req.user.organization,
+      storageType,
     });
+
+    // If cloud storage, queue upload job
+    if (storageType !== 'local') {
+      const uploadJob = await UploadQueue.create({
+        organization: req.user.organization,
+        attachment: attachment._id,
+        provider: storageType,
+      });
+
+      // Return without content
+      const response = attachment.toObject();
+      delete response.content;
+
+      return res.status(201).json({
+        success: true,
+        data: {
+          attachment: response,
+          uploadJob: {
+            _id: uploadJob._id,
+            status: uploadJob.status,
+          },
+        },
+      });
+    }
 
     // Create audit log
     await createAuditLog({
@@ -162,6 +195,33 @@ export const uploadAttachment = async (req, res, next) => {
     res.status(201).json({
       success: true,
       data: response,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getUploadStatus = async (req, res, next) => {
+  try {
+    const job = await UploadQueue.findOne({
+      _id: req.params.id,
+      organization: req.user.organization,
+    });
+
+    if (!job) {
+      return res.status(404).json({
+        success: false,
+        error: 'Upload job not found',
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      data: {
+        status: job.status,
+        attempts: job.attempts,
+        lastError: job.lastError,
+      },
     });
   } catch (error) {
     next(error);
