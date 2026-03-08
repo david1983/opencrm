@@ -2,38 +2,38 @@ import mongoose from 'mongoose';
 
 const cloudStorageCredentialSchema = new mongoose.Schema(
   {
-    provider: {
-      type: String,
-      enum: ['google', 'dropbox'],
-      required: true,
-    },
     organization: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Organization',
       required: true,
+      unique: false,
+    },
+    provider: {
+      type: String,
+      required: true,
+      enum: ['google', 'dropbox'],
+    },
+    credentials: {
+      type: mongoose.Schema.Types.Mixed,
+      required: true,
+      // For Google Drive: { clientId, clientSecret, refreshToken }
+      // For Dropbox: { accessToken }
+    },
+    status: {
+      type: String,
+      enum: ['active', 'error', 'pending'],
+      default: 'pending',
+    },
+    lastError: {
+      type: String,
+    },
+    lastUsed: {
+      type: Date,
     },
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
       required: true,
-    },
-    credentials: {
-      type: Object,
-      required: true,
-      select: false, // Exclude from default queries for security
-      // For Google: { clientId, clientSecret, refreshToken }
-      // For Dropbox: { accessToken } or { appKey, appSecret, refreshToken }
-    },
-    status: {
-      type: String,
-      enum: ['active', 'expired', 'error'],
-      default: 'active',
-    },
-    lastUsed: {
-      type: Date,
-    },
-    lastError: {
-      type: String,
     },
   },
   {
@@ -41,7 +41,7 @@ const cloudStorageCredentialSchema = new mongoose.Schema(
   }
 );
 
-// Ensure one credential per org per provider
+// Compound index for organization + provider (one config per provider per org)
 cloudStorageCredentialSchema.index(
   { organization: 1, provider: 1 },
   { unique: true }

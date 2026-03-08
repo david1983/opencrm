@@ -1,12 +1,7 @@
 import mongoose from 'mongoose';
 
-const RETRY_DELAYS = {
-  1: 1000,      // 1 second
-  2: 5000,      // 5 seconds
-  3: 30000,     // 30 seconds
-  4: 300000,    // 5 minutes
-  5: 900000,    // 15 minutes
-};
+const MAX_RETRIES = 5;
+const RETRY_DELAYS = [60000, 300000, 900000, 3600000, 14400000]; // 1m, 5m, 15m, 1h, 4h
 
 const uploadQueueSchema = new mongoose.Schema(
   {
@@ -14,6 +9,7 @@ const uploadQueueSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Organization',
       required: true,
+      index: true,
     },
     attachment: {
       type: mongoose.Schema.Types.ObjectId,
@@ -22,13 +18,14 @@ const uploadQueueSchema = new mongoose.Schema(
     },
     provider: {
       type: String,
-      enum: ['google', 'dropbox'],
       required: true,
+      enum: ['google', 'dropbox'],
     },
     status: {
       type: String,
       enum: ['pending', 'uploading', 'completed', 'failed'],
       default: 'pending',
+      index: true,
     },
     attempts: {
       type: Number,
@@ -36,13 +33,14 @@ const uploadQueueSchema = new mongoose.Schema(
     },
     maxAttempts: {
       type: Number,
-      default: 5,
+      default: MAX_RETRIES,
     },
     lastError: {
       type: String,
     },
     nextRetryAt: {
       type: Date,
+      index: true,
     },
   },
   {
@@ -50,27 +48,22 @@ const uploadQueueSchema = new mongoose.Schema(
   }
 );
 
-// Index for processing pending jobs
-uploadQueueSchema.index({ status: 1, nextRetryAt: 1 });
-
-// Method to calculate next retry delay
-uploadQueueSchema.methods.getNextRetryDelay = function () {
-  return RETRY_DELAYS[this.attempts + 1] || RETRY_DELAYS[5];
-};
-
-// Method to schedule retry
-uploadQueueSchema.methods.scheduleRetry = function (error) {
+// Method to calculate next retry time
+uploadQueueSchema.methods.scheduleRetry = async function (errorMessage) {
   this.attempts += 1;
-  this.lastError = error;
+  this.lastError = errorMessage;
 
   if (this.attempts >= this.maxAttempts) {
     this.status = 'failed';
+    this.nextRetryAt = null;
   } else {
     this.status = 'pending';
-    this.nextRetryAt = new Date(Date.now() + this.getNextRetryDelay());
+    const delayMs = RETRY_DELAYS[this.attempts - 1] || RETRY_DELAYS[RETRY_DELAYS.length - 1];
+    this.nextRetryAt = new Date(Date.now() + delayMs);
   }
 
-  return this.save();
+  await this.save();
+  return this;
 };
 
 const UploadQueue = mongoose.model('UploadQueue', uploadQueueSchema);
