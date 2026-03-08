@@ -20,6 +20,7 @@ const cloudStorageCredentialSchema = new mongoose.Schema(
     credentials: {
       type: Object,
       required: true,
+      select: false, // Exclude from default queries for security
       // For Google: { clientId, clientSecret, refreshToken }
       // For Dropbox: { accessToken } or { appKey, appSecret, refreshToken }
     },
