@@ -27,6 +27,31 @@ const attachmentSchema = new mongoose.Schema(
     url: {
       type: String,
     },
+    storageType: {
+      type: String,
+      enum: ['local', 'google', 'dropbox'],
+      default: 'local',
+    },
+    cloudProvider: {
+      type: String,
+      enum: ['google', 'dropbox'],
+    },
+    cloudFileId: {
+      type: String,
+    },
+    cloudPath: {
+      type: String,
+    },
+    cloudUrl: {
+      type: String,
+    },
+    thumbnailUrl: {
+      type: String,
+    },
+    uploadQueueId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'UploadQueue',
+    },
     // Polymorphic reference to the parent entity
     parentType: {
       type: String,
