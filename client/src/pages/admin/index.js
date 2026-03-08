@@ -4,3 +4,4 @@ export { default as RoleManagement } from './RoleManagement';
 export { default as CustomObjects } from './CustomObjects';
 export { default as ObjectDetail } from './ObjectDetail';
 export { default as ConnectedApps } from './ConnectedApps';
+export { default as ApiDocs } from './ApiDocs';
