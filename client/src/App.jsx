@@ -27,6 +27,7 @@ import {
   CustomObjects,
   ObjectDetail,
   ConnectedApps,
+  ApiDocs,
 } from './pages/admin';
 
 function PublicRoute({ children }) {
@@ -119,6 +120,7 @@ function App() {
         <Route path="objects" element={<CustomObjects />} />
         <Route path="objects/:id" element={<ObjectDetail />} />
         <Route path="connected-apps" element={<ConnectedApps />} />
+        <Route path="api-docs" element={<ApiDocs />} />
       </Route>
 
       {/* Catch all - redirect to dashboard */}
