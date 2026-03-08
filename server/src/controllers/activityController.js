@@ -68,6 +68,14 @@ export const getActivity = async (req, res, next) => {
       });
     }
 
+    // Check if user can access this activity (owner or admin)
+    if (activity.owner._id.toString() !== req.user.id && req.user.role !== 'admin') {
+      return res.status(404).json({
+        success: false,
+        error: 'Activity not found',
+      });
+    }
+
     res.status(200).json({
       success: true,
       data: activity,
@@ -80,6 +88,7 @@ export const getActivity = async (req, res, next) => {
 export const createActivity = async (req, res, next) => {
   try {
     req.body.owner = req.user.id;
+    req.body.organization = req.user.organization;
     const activity = await Activity.create(req.body);
 
     res.status(201).json({

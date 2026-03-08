@@ -60,6 +60,14 @@ export const getOpportunity = async (req, res, next) => {
       });
     }
 
+    // Check if user can access this opportunity (owner or admin)
+    if (opportunity.owner._id.toString() !== req.user.id && req.user.role !== 'admin') {
+      return res.status(404).json({
+        success: false,
+        error: 'Opportunity not found',
+      });
+    }
+
     res.status(200).json({
       success: true,
       data: opportunity,
@@ -72,6 +80,7 @@ export const getOpportunity = async (req, res, next) => {
 export const createOpportunity = async (req, res, next) => {
   try {
     req.body.owner = req.user.id;
+    req.body.organization = req.user.organization;
     const opportunity = await Opportunity.create(req.body);
 
     // Create audit log

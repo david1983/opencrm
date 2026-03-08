@@ -59,6 +59,14 @@ export const getAccount = async (req, res, next) => {
       });
     }
 
+    // Check if user can access this account (owner or admin)
+    if (account.owner._id.toString() !== req.user.id && req.user.role !== 'admin') {
+      return res.status(404).json({
+        success: false,
+        error: 'Account not found',
+      });
+    }
+
     res.status(200).json({
       success: true,
       data: account,
@@ -73,6 +81,7 @@ export const getAccount = async (req, res, next) => {
 export const createAccount = async (req, res, next) => {
   try {
     req.body.owner = req.user.id;
+    req.body.organization = req.user.organization;
     const account = await Account.create(req.body);
 
     // Create audit log

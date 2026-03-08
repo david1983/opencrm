@@ -72,6 +72,14 @@ export const getTask = async (req, res, next) => {
       });
     }
 
+    // Check if user can access this task (owner or admin)
+    if (task.owner._id.toString() !== req.user.id && req.user.role !== 'admin') {
+      return res.status(404).json({
+        success: false,
+        error: 'Task not found',
+      });
+    }
+
     res.status(200).json({
       success: true,
       data: task,
@@ -84,6 +92,7 @@ export const getTask = async (req, res, next) => {
 export const createTask = async (req, res, next) => {
   try {
     req.body.owner = req.user.id;
+    req.body.organization = req.user.organization;
     const task = await Task.create(req.body);
 
     res.status(201).json({

@@ -56,6 +56,14 @@ export const getContact = async (req, res, next) => {
       });
     }
 
+    // Check if user can access this contact (owner or admin)
+    if (contact.owner._id.toString() !== req.user.id && req.user.role !== 'admin') {
+      return res.status(404).json({
+        success: false,
+        error: 'Contact not found',
+      });
+    }
+
     res.status(200).json({
       success: true,
       data: contact,
@@ -68,6 +76,7 @@ export const getContact = async (req, res, next) => {
 export const createContact = async (req, res, next) => {
   try {
     req.body.owner = req.user.id;
+    req.body.organization = req.user.organization;
     const contact = await Contact.create(req.body);
 
     // Create audit log
