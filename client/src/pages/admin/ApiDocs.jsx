@@ -1,4 +1,4 @@
-import { DocumentTextIcon, ExternalLinkIcon, KeyIcon } from '@heroicons/react/24/outline';
+import { DocumentTextIcon, ArrowTopRightOnSquareIcon, KeyIcon } from '@heroicons/react/24/outline';
 import { Card, CardHeader, CardBody, Button } from '../../components/ui';
 
 const endpointCategories = [
@@ -86,7 +86,7 @@ export default function ApiDocs() {
           </div>
         </div>
         <Button onClick={handleOpenSwagger}>
-          <ExternalLinkIcon className="h-5 w-5 mr-2" />
+          <ArrowTopRightOnSquareIcon className="h-5 w-5 mr-2" />
           Open Swagger UI
         </Button>
       </div>
