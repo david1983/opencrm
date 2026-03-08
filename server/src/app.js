@@ -76,14 +76,14 @@ app.get('/health', (req, res) => {
   res.status(200).json({ status: 'ok' });
 });
 
-// Swagger API Documentation (public, before rate limiter)
-app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
-
-// Serve raw spec as JSON
+// Serve raw OpenAPI spec as JSON (before Swagger UI middleware)
 app.get('/api/docs/swagger.json', (req, res) => {
   res.setHeader('Content-Type', 'application/json');
   res.send(swaggerSpec);
 });
+
+// Swagger API Documentation (public, before rate limiter)
+app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 // Rate limiting
 const limiter = rateLimit({
