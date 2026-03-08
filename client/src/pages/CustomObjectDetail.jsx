@@ -26,10 +26,14 @@ export default function CustomObjectDetail() {
     queryKey: ['object-record', objectName, recordId],
     queryFn: () => api.get(`/objects/${objectName}/${recordId}`),
     enabled: !isNew,
-    onSuccess: (data) => {
-      setFormData(data.data || {});
-    },
   });
+
+  // Populate form data when record loads (for edit mode)
+  useEffect(() => {
+    if (recordData?.data && !isNew) {
+      setFormData(recordData.data || {});
+    }
+  }, [recordData, isNew]);
 
   // Initialize form data for new records
   useEffect(() => {
@@ -165,11 +169,11 @@ export default function CustomObjectDetail() {
       case 'Text':
       case 'Email':
       case 'Phone':
-      case 'URL':
+      case 'Url':
         return (
           <Input
             {...commonProps}
-            type={field.type === 'Email' ? 'email' : field.type === 'Phone' ? 'tel' : field.type === 'URL' ? 'url' : 'text'}
+            type={field.type === 'Email' ? 'email' : field.type === 'Phone' ? 'tel' : field.type === 'Url' ? 'url' : 'text'}
           />
         );
 

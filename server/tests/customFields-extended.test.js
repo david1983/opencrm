@@ -42,6 +42,7 @@ describe('Custom Field Controller - Extended', () => {
       name: 'Project',
       label: 'Project',
       pluralLabel: 'Projects',
+      organization: orgId,
     });
     objectId = customObj._id;
 
@@ -127,6 +128,7 @@ describe('Custom Field Controller - Extended', () => {
         name: 'Account',
         label: 'Account',
         pluralLabel: 'Accounts',
+        organization: orgId,
       });
 
       const response = await request(app)
@@ -248,6 +250,7 @@ describe('Custom Field Controller - Extended', () => {
         name: 'Account',
         label: 'Account',
         pluralLabel: 'Accounts',
+        organization: orgId,
       });
 
       const field = await CustomField.create({
@@ -262,6 +265,7 @@ describe('Custom Field Controller - Extended', () => {
         name: 'Contact',
         label: 'Contact',
         pluralLabel: 'Contacts',
+        organization: orgId,
       });
 
       const response = await request(app)

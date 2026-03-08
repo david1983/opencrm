@@ -1,4 +1,5 @@
 import ConnectedApp from '../models/ConnectedApp.js';
+import ConnectedAppAuthorization from '../models/ConnectedAppAuthorization.js';
 import {
   generateClientId,
   generateClientSecret,
@@ -82,6 +83,17 @@ export const createConnectedApp = async (req, res, next) => {
     }
 
     const app = await ConnectedApp.create(appData);
+
+    // For API key apps, create the authorization record linking to the creating user
+    if (authType === 'apikey') {
+      await ConnectedAppAuthorization.create({
+        user: req.user._id,
+        connectedApp: app._id,
+        organization: req.user.organization,
+        grantedScopes: appData.scopes,
+        isApiKey: true,
+      });
+    }
 
     res.status(201).json({
       success: true,

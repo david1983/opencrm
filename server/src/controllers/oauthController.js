@@ -1,15 +1,13 @@
 import crypto from 'crypto';
 import ConnectedApp from '../models/ConnectedApp.js';
 import ConnectedAppAuthorization from '../models/ConnectedAppAuthorization.js';
+import AuthCode from '../models/AuthCode.js';
 import {
   generateAccessToken,
   generateRefreshToken,
   hashToken,
   verifySecret,
 } from '../utils/tokenUtils.js';
-
-// Temporary store for authorization codes (use Redis in production)
-const authCodes = new Map();
 
 // Show authorization page
 export const authorize = async (req, res, next) => {
@@ -87,13 +85,14 @@ export const consent = async (req, res, next) => {
     // Generate authorization code
     const code = crypto.randomBytes(32).toString('hex');
 
-    authCodes.set(code, {
+    await AuthCode.create({
+      code,
       clientId: client_id,
       userId: req.user._id,
       organizationId: req.user.organization,
       appId: app._id,
       scopes,
-      expiresAt: Date.now() + 10 * 60 * 1000, // 10 minutes
+      expiresAt: new Date(Date.now() + 10 * 60 * 1000), // 10 minutes
     });
 
     res.status(200).json({
@@ -132,9 +131,9 @@ export const token = async (req, res, next) => {
     }
 
     if (grant_type === 'authorization_code') {
-      const authCode = authCodes.get(code);
+      const authCode = await AuthCode.findOne({ code });
 
-      if (!authCode || authCode.expiresAt < Date.now()) {
+      if (!authCode || authCode.expiresAt < new Date()) {
         return res.status(400).json({
           success: false,
           error: 'Invalid or expired authorization code',
@@ -148,8 +147,8 @@ export const token = async (req, res, next) => {
         });
       }
 
-      // Delete used code
-      authCodes.delete(code);
+      // Delete used code (one-time use)
+      await AuthCode.deleteOne({ code });
 
       // Create or update authorization
       const accessToken = generateAccessToken({
@@ -192,10 +191,10 @@ export const token = async (req, res, next) => {
         refreshTokenHash: hashToken(refresh_token),
       });
 
-      if (!auth) {
+      if (!auth || auth.expiresAt < new Date()) {
         return res.status(400).json({
           success: false,
-          error: 'Invalid refresh token',
+          error: 'Invalid or expired refresh token',
         });
       }
 
