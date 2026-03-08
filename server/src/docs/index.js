@@ -156,6 +156,30 @@ const options = {
             },
           },
         },
+        BadRequestError: {
+          description: 'Bad Request - Invalid request data or parameters',
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  success: {
+                    type: 'boolean',
+                    example: false,
+                  },
+                  error: {
+                    type: 'string',
+                    example: 'Bad Request',
+                  },
+                  message: {
+                    type: 'string',
+                    example: 'Invalid request data',
+                  },
+                },
+              },
+            },
+          },
+        },
         RateLimitError: {
           description: 'Too Many Requests - Rate limit exceeded',
           content: {
@@ -276,6 +300,14 @@ const options = {
       {
         name: 'Attachments',
         description: 'Attachment management operations',
+      },
+      {
+        name: 'Admin',
+        description: 'Organization management operations (Admin)',
+      },
+      {
+        name: 'Users',
+        description: 'User management operations (Admin)',
       },
       {
         name: 'Roles',

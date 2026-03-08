@@ -142,6 +142,12 @@ router.delete('/:id', deleteUser);
  *     tags: [Users]
  *     parameters:
  *       - $ref: '#/components/parameters/IdParam'
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/PasswordResetInput'
  *     responses:
  *       200:
  *         description: Password reset successfully
@@ -150,9 +156,14 @@ router.delete('/:id', deleteUser);
  *             schema:
  *               type: object
  *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
  *                 message:
  *                   type: string
- *                   example: Password reset email sent
+ *                   example: Password reset successfully
+ *       400:
+ *         $ref: '#/components/responses/BadRequestError'
  *       401:
  *         $ref: '#/components/responses/UnauthorizedError'
  *       403:

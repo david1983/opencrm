@@ -571,6 +571,115 @@ export default {
   // ============================================
   // Admin Schemas
   // ============================================
+  Organization: {
+    type: 'object',
+    properties: {
+      _id: { $ref: '#/components/schemas/ObjectId' },
+      name: { type: 'string', example: 'Acme Corporation' },
+      logo: { type: 'string', format: 'uri' },
+      address: { $ref: '#/components/schemas/Address' },
+      phone: { type: 'string', example: '+1-555-123-4567' },
+      website: { type: 'string', format: 'uri', example: 'https://acme.com' },
+      industry: { type: 'string', example: 'Technology' },
+      companySize: {
+        type: 'string',
+        enum: ['1-10', '11-50', '51-200', '201-500', '501-1000', '1000+'],
+      },
+      timezone: { type: 'string', example: 'America/New_York' },
+      currency: { type: 'string', example: 'USD' },
+      dateFormat: { type: 'string', example: 'MM/DD/YYYY' },
+      fiscalYearStart: { type: 'integer', minimum: 1, maximum: 12, example: 1 },
+      features: {
+        type: 'object',
+        properties: {
+          leads: { type: 'boolean', default: true },
+          opportunities: { type: 'boolean', default: true },
+          activities: { type: 'boolean', default: true },
+          tasks: { type: 'boolean', default: true },
+          reports: { type: 'boolean', default: true },
+        },
+      },
+      createdAt: { type: 'string', format: 'date-time' },
+      updatedAt: { type: 'string', format: 'date-time' },
+    },
+  },
+
+  OrganizationInput: {
+    type: 'object',
+    properties: {
+      name: { type: 'string', example: 'Acme Corporation' },
+      logo: { type: 'string', format: 'uri' },
+      address: { $ref: '#/components/schemas/Address' },
+      phone: { type: 'string', example: '+1-555-123-4567' },
+      website: { type: 'string', format: 'uri', example: 'https://acme.com' },
+      industry: { type: 'string', example: 'Technology' },
+      companySize: {
+        type: 'string',
+        enum: ['1-10', '11-50', '51-200', '201-500', '501-1000', '1000+'],
+      },
+      timezone: { type: 'string', example: 'America/New_York' },
+      currency: { type: 'string', example: 'USD' },
+      dateFormat: { type: 'string', example: 'MM/DD/YYYY' },
+      fiscalYearStart: { type: 'integer', minimum: 1, maximum: 12 },
+      features: {
+        type: 'object',
+        properties: {
+          leads: { type: 'boolean' },
+          opportunities: { type: 'boolean' },
+          activities: { type: 'boolean' },
+          tasks: { type: 'boolean' },
+          reports: { type: 'boolean' },
+        },
+      },
+    },
+  },
+
+  UserInput: {
+    type: 'object',
+    properties: {
+      name: { type: 'string', example: 'John Doe' },
+      email: { type: 'string', format: 'email', example: 'john.doe@example.com' },
+      role: {
+        type: 'string',
+        enum: ['user', 'admin'],
+        default: 'user',
+      },
+      roleRef: { $ref: '#/components/schemas/ObjectId' },
+      avatar: { type: 'string', format: 'uri' },
+    },
+  },
+
+  PasswordResetInput: {
+    type: 'object',
+    required: ['password'],
+    properties: {
+      password: {
+        type: 'string',
+        format: 'password',
+        minLength: 6,
+        example: 'newSecurePassword123',
+      },
+    },
+  },
+
+  GoogleDriveConfig: {
+    type: 'object',
+    required: ['clientId', 'clientSecret', 'refreshToken'],
+    properties: {
+      clientId: { type: 'string', description: 'Google OAuth client ID' },
+      clientSecret: { type: 'string', description: 'Google OAuth client secret' },
+      refreshToken: { type: 'string', description: 'Google OAuth refresh token' },
+    },
+  },
+
+  DropboxConfig: {
+    type: 'object',
+    required: ['accessToken'],
+    properties: {
+      accessToken: { type: 'string', description: 'Dropbox access token' },
+    },
+  },
+
   Permission: {
     type: 'object',
     properties: {
@@ -810,6 +919,86 @@ export default {
             example: { Account: 5, Contact: 7, Lead: 3 },
           },
         },
+      },
+    },
+  },
+
+  // ============================================
+  // Response Wrapper Schemas
+  // ============================================
+  UserResponse: {
+    type: 'object',
+    properties: {
+      success: { type: 'boolean', example: true },
+      data: { $ref: '#/components/schemas/User' },
+    },
+  },
+
+  UserListResponse: {
+    type: 'object',
+    properties: {
+      success: { type: 'boolean', example: true },
+      data: {
+        type: 'array',
+        items: { $ref: '#/components/schemas/User' },
+      },
+      pagination: { $ref: '#/components/schemas/PaginationMeta' },
+    },
+  },
+
+  RoleResponse: {
+    type: 'object',
+    properties: {
+      success: { type: 'boolean', example: true },
+      data: { $ref: '#/components/schemas/Role' },
+    },
+  },
+
+  RoleListResponse: {
+    type: 'object',
+    properties: {
+      success: { type: 'boolean', example: true },
+      data: {
+        type: 'array',
+        items: { $ref: '#/components/schemas/Role' },
+      },
+    },
+  },
+
+  ConnectedAppResponse: {
+    type: 'object',
+    properties: {
+      success: { type: 'boolean', example: true },
+      data: { $ref: '#/components/schemas/ConnectedApp' },
+    },
+  },
+
+  ConnectedAppListResponse: {
+    type: 'object',
+    properties: {
+      success: { type: 'boolean', example: true },
+      data: {
+        type: 'array',
+        items: { $ref: '#/components/schemas/ConnectedApp' },
+      },
+    },
+  },
+
+  CloudStorageCredentialResponse: {
+    type: 'object',
+    properties: {
+      success: { type: 'boolean', example: true },
+      data: { $ref: '#/components/schemas/CloudStorageCredential' },
+    },
+  },
+
+  CloudStorageCredentialListResponse: {
+    type: 'object',
+    properties: {
+      success: { type: 'boolean', example: true },
+      data: {
+        type: 'array',
+        items: { $ref: '#/components/schemas/CloudStorageCredential' },
       },
     },
   },
