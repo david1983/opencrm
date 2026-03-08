@@ -1,38 +1,74 @@
 import { DocumentTextIcon, ExternalLinkIcon, KeyIcon } from '@heroicons/react/24/outline';
-import { Card, CardHeader, CardBody, Button, Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../../components/ui';
+import { Card, CardHeader, CardBody, Button } from '../../components/ui';
 
 const endpointCategories = [
   {
     category: 'Authentication',
-    endpoints: 'register, login, me, logout',
     description: 'User authentication and session management',
+    endpoints: [
+      { method: 'POST', path: '/auth/register', description: 'Register new user' },
+      { method: 'POST', path: '/auth/login', description: 'User login' },
+      { method: 'GET', path: '/auth/me', description: 'Get current user' },
+      { method: 'POST', path: '/auth/logout', description: 'User logout' },
+    ],
   },
   {
     category: 'CRM Core',
-    endpoints: 'accounts, contacts, leads, opportunities',
     description: 'Core CRM records and relationships',
+    endpoints: [
+      { method: 'GET', path: '/accounts', description: 'List accounts' },
+      { method: 'GET', path: '/contacts', description: 'List contacts' },
+      { method: 'GET', path: '/leads', description: 'List leads' },
+      { method: 'GET', path: '/opportunities', description: 'List opportunities' },
+    ],
   },
   {
     category: 'Activities',
-    endpoints: 'activities, tasks, notes, attachments',
     description: 'Activity tracking and task management',
+    endpoints: [
+      { method: 'GET', path: '/activities', description: 'List activities' },
+      { method: 'GET', path: '/tasks', description: 'List tasks' },
+      { method: 'GET', path: '/notes', description: 'List notes' },
+      { method: 'GET', path: '/attachments', description: 'List attachments' },
+    ],
   },
   {
     category: 'Administration',
-    endpoints: 'users, roles, connected-apps, cloud-storage',
     description: 'System administration and configuration',
+    endpoints: [
+      { method: 'GET', path: '/admin/users', description: 'List users' },
+      { method: 'GET', path: '/admin/roles', description: 'List roles' },
+      { method: 'GET', path: '/admin/connected-apps', description: 'List connected apps' },
+      { method: 'GET', path: '/admin/cloud-storage', description: 'List cloud storage' },
+    ],
   },
   {
     category: 'Reports',
-    endpoints: 'dashboard, pipeline, activities',
     description: 'Analytics and reporting endpoints',
+    endpoints: [
+      { method: 'GET', path: '/reports/dashboard', description: 'Dashboard metrics' },
+      { method: 'GET', path: '/reports/pipeline', description: 'Pipeline report' },
+      { method: 'GET', path: '/reports/activities', description: 'Activities report' },
+    ],
   },
   {
     category: 'System',
-    endpoints: 'search, audit, objects',
     description: 'System utilities and metadata',
+    endpoints: [
+      { method: 'GET', path: '/search', description: 'Global search' },
+      { method: 'GET', path: '/audit', description: 'Audit logs' },
+      { method: 'GET', path: '/objects', description: 'Custom objects metadata' },
+    ],
   },
 ];
+
+const methodColors = {
+  GET: 'bg-green-100 text-green-800',
+  POST: 'bg-blue-100 text-blue-800',
+  PUT: 'bg-yellow-100 text-yellow-800',
+  PATCH: 'bg-yellow-100 text-yellow-800',
+  DELETE: 'bg-red-100 text-red-800',
+};
 
 export default function ApiDocs() {
   const handleOpenSwagger = () => {
@@ -146,26 +182,33 @@ export default function ApiDocs() {
           <h2 className="text-lg font-medium text-gray-900">Endpoint Categories</h2>
         </CardHeader>
         <CardBody className="p-0">
-          <Table>
-            <TableHeader>
-              <TableHead>Category</TableHead>
-              <TableHead>Endpoints</TableHead>
-              <TableHead>Description</TableHead>
-            </TableHeader>
-            <TableBody>
-              {endpointCategories.map((cat) => (
-                <TableRow key={cat.category}>
-                  <TableCell className="font-medium">{cat.category}</TableCell>
-                  <TableCell>
-                    <code className="text-sm bg-gray-100 px-2 py-1 rounded">
-                      {cat.endpoints}
-                    </code>
-                  </TableCell>
-                  <TableCell className="text-gray-500">{cat.description}</TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+          <div className="divide-y divide-gray-200">
+            {endpointCategories.map((cat) => (
+              <div key={cat.category} className="p-4">
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="text-sm font-semibold text-gray-900">{cat.category}</h3>
+                  <span className="text-xs text-gray-500">{cat.description}</span>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {cat.endpoints.map((endpoint) => (
+                    <a
+                      key={`${endpoint.method}-${endpoint.path}`}
+                      href={`/api/docs`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs hover:bg-gray-50 transition-colors"
+                      title={endpoint.description}
+                    >
+                      <span className={`px-1.5 py-0.5 rounded text-xs font-medium ${methodColors[endpoint.method]}`}>
+                        {endpoint.method}
+                      </span>
+                      <code className="text-gray-700">{endpoint.path}</code>
+                    </a>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
         </CardBody>
       </Card>
     </div>
