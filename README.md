@@ -61,7 +61,10 @@ Built as a full-stack JavaScript application, OpenCRM gives you complete control
 
 - 🔧 **Custom Objects** — Create your own data models beyond the standard CRM entities
 - 🔧 **Custom Fields** — Add custom properties to any object type
-- 👥 **User Management** — Invite team members with role-based access (Admin / User)
+- 👥 **User Management** — Invite team members with role-based access
+- 🎭 **Role Management** — Define roles with granular permissions (RBAC)
+- 🔌 **Connected Apps** — OAuth apps and API keys for integrations
+- ☁️ **Cloud Storage** — Upload attachments to Google Drive or Dropbox
 - 🏢 **Organization Settings** — Configure company info, timezone, currency, and feature flags
 - 📝 **Audit Logging** — Full change history for compliance and accountability
 
@@ -69,7 +72,8 @@ Built as a full-stack JavaScript application, OpenCRM gives you complete control
 
 - 🔐 **JWT Authentication** — Secure, stateless token-based auth
 - 🔑 **OAuth 2.0** — Sign in with Google or GitHub
-- 🛡️ **Role-Based Access Control** — Admin and User roles with permission enforcement
+- 🛡️ **Role-Based Access Control (RBAC)** — Granular permissions with custom roles
+- 🔌 **Connected Apps** — OAuth authorization and API key authentication for integrations
 - 🚦 **Rate Limiting** — API rate limiting to prevent abuse (100 requests / 15 min)
 - 🔒 **Security Headers** — Helmet.js for HTTP security headers
 - 🧹 **Data Sanitization** — MongoDB injection prevention built-in
@@ -105,6 +109,10 @@ OpenCRM is built with a modern, production-ready JavaScript stack:
 | [Passport.js](https://www.passportjs.org/) | OAuth authentication (Google, GitHub) |
 | [JSON Web Tokens](https://jwt.io/) | Stateless authentication |
 | [Multer](https://github.com/expressjs/multer) | File upload handling |
+| [Google Drive API](https://developers.google.com/drive) | Cloud storage integration |
+| [Dropbox API](https://www.dropbox.com/developers) | Cloud storage integration |
+| [Google Drive API](https://developers.google.com/drive) | Cloud storage integration |
+| [Dropbox API](https://www.dropbox.com/developers) | Cloud storage integration |
 
 ### Testing
 
@@ -342,6 +350,40 @@ NODE_ENV=production npm run start
 
 The production server serves both the API and the built frontend from a single Express instance.
 
+### Docker Deployment
+
+OpenCRM includes Docker support for easy deployment:
+
+```bash
+# Build and run with Docker Compose
+docker-compose up -d
+
+# Or build manually
+docker build -t opencrm .
+docker run -p 5000:5000 opencrm
+```
+
+The `docker-compose.yml` includes MongoDB, so you can get a complete stack running with a single command.
+
+### Docker Deployment
+
+OpenCRM includes Docker support for easy containerized deployment:
+
+```bash
+# Build and run with Docker Compose
+docker-compose up -d
+
+# Or build manually
+docker build -t opencrm .
+docker run -p 5000:5000 opencrm
+```
+
+The Docker setup includes:
+- Multi-stage builds for optimized images
+- MongoDB container with persistent volumes
+- Environment variable configuration
+- Health checks for container monitoring
+
 ### Environment Variables for Production
 
 | Variable | Required | Description |
@@ -401,9 +443,15 @@ We welcome contributions from the community! Whether it's bug fixes, new feature
 
 We're actively developing OpenCRM. Here's what's planned:
 
+### Recently Added
+
+- [x] Docker & Docker Compose support
+- [x] Role-based access control with granular permissions (RBAC)
+- [x] Connected Apps (OAuth apps & API key authentication)
+- [x] Cloud storage integration (Google Drive, Dropbox)
+
 ### Upcoming
 
-- [ ] Docker & Docker Compose support
 - [ ] GitHub Actions CI/CD pipeline
 - [ ] Email integration (send/receive from CRM)
 - [ ] Workflow automation and triggers
@@ -419,7 +467,7 @@ We're actively developing OpenCRM. Here's what's planned:
 - [ ] Mobile-responsive progressive web app (PWA)
 - [ ] Webhooks for third-party integrations
 - [ ] Multi-language support (i18n)
-- [ ] Advanced permission system (field-level security)
+- [ ] Field-level security
 - [ ] REST API SDK for JavaScript/Python
 
 ---
@@ -433,6 +481,9 @@ We're actively developing OpenCRM. Here's what's planned:
 | **Self-Hosted** | ✅ Yes | ❌ No | ❌ No | ❌ No |
 | **Data Ownership** | ✅ Full | ❌ Vendor | ❌ Vendor | ❌ Vendor |
 | **Custom Objects** | ✅ Yes | ✅ Yes | ⚠️ Paid | ⚠️ Paid |
+| **RBAC** | ✅ Custom roles | ✅ Yes | ⚠️ Paid | ⚠️ Paid |
+| **Connected Apps** | ✅ OAuth & API keys | ✅ App Exchange | ⚠️ Paid | ⚠️ Paid |
+| **Cloud Storage** | ✅ Google, Dropbox | ✅ Yes | ⚠️ Paid | ⚠️ Limited |
 | **OAuth Login** | ✅ Google, GitHub | ✅ SSO | ✅ Google | ✅ Google |
 | **REST API** | ✅ Full | ✅ Full | ✅ Full | ✅ Full |
 | **No User Limits** | ✅ Unlimited | ❌ Per-seat | ⚠️ Limited | ❌ Per-seat |
