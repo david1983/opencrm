@@ -109,8 +109,7 @@ OpenCRM is built with a modern, production-ready JavaScript stack:
 | [Passport.js](https://www.passportjs.org/) | OAuth authentication (Google, GitHub) |
 | [JSON Web Tokens](https://jwt.io/) | Stateless authentication |
 | [Multer](https://github.com/expressjs/multer) | File upload handling |
-| [Google Drive API](https://developers.google.com/drive) | Cloud storage integration |
-| [Dropbox API](https://www.dropbox.com/developers) | Cloud storage integration |
+| [Swagger UI](https://swagger.io/tools/swagger-ui/) | API documentation |
 | [Google Drive API](https://developers.google.com/drive) | Cloud storage integration |
 | [Dropbox API](https://www.dropbox.com/developers) | Cloud storage integration |
 
@@ -449,6 +448,7 @@ We're actively developing OpenCRM. Here's what's planned:
 - [x] Role-based access control with granular permissions (RBAC)
 - [x] Connected Apps (OAuth apps & API key authentication)
 - [x] Cloud storage integration (Google Drive, Dropbox)
+- [x] API documentation with Swagger/OpenAPI
 
 ### Upcoming
 
@@ -456,7 +456,6 @@ We're actively developing OpenCRM. Here's what's planned:
 - [ ] Email integration (send/receive from CRM)
 - [ ] Workflow automation and triggers
 - [ ] Bulk import/export (CSV, Excel)
-- [ ] API documentation with Swagger/OpenAPI
 
 ### Planned
 
