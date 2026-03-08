@@ -63,6 +63,7 @@ describe('Custom Object Controller - Extended', () => {
         name: 'Project',
         label: 'Project',
         pluralLabel: 'Projects',
+        organization: orgId,
       });
       objectId = obj._id;
     });

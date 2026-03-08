@@ -33,8 +33,10 @@ export const getNotes = async (req, res, next) => {
 // Get single note
 export const getNote = async (req, res, next) => {
   try {
-    const note = await Note.findById(req.params.id)
-      .populate('owner', 'name email');
+    const note = await Note.findOne({
+      _id: req.params.id,
+      organization: req.user.organization,
+    }).populate('owner', 'name email');
 
     if (!note) {
       return res.status(404).json({
@@ -88,7 +90,10 @@ export const createNote = async (req, res, next) => {
 // Update note
 export const updateNote = async (req, res, next) => {
   try {
-    let note = await Note.findById(req.params.id);
+    let note = await Note.findOne({
+      _id: req.params.id,
+      organization: req.user.organization,
+    });
 
     if (!note) {
       return res.status(404).json({
@@ -122,7 +127,10 @@ export const updateNote = async (req, res, next) => {
 // Delete note
 export const deleteNote = async (req, res, next) => {
   try {
-    const note = await Note.findById(req.params.id);
+    const note = await Note.findOne({
+      _id: req.params.id,
+      organization: req.user.organization,
+    });
 
     if (!note) {
       return res.status(404).json({

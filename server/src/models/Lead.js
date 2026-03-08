@@ -32,7 +32,7 @@ const leadSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ['New', 'Contacted', 'Qualified', 'Unqualified', 'Converted'],
+      enum: ['New', 'Contacted', 'Qualified', 'Unqualified', 'Converted', 'Converting'],
       default: 'New',
     },
     source: {
@@ -43,6 +43,11 @@ const leadSchema = new mongoose.Schema(
     owner: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
+      required: true,
+    },
+    organization: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Organization',
       required: true,
     },
     description: {

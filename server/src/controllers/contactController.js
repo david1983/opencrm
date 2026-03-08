@@ -42,11 +42,22 @@ export const getContacts = async (req, res, next) => {
 
 export const getContact = async (req, res, next) => {
   try {
-    const contact = await Contact.findById(req.params.id)
+    const contact = await Contact.findOne({
+      _id: req.params.id,
+      organization: req.user.organization,
+    })
       .populate('owner', 'name email')
       .populate('account', 'name industry phone website');
 
     if (!contact) {
+      return res.status(404).json({
+        success: false,
+        error: 'Contact not found',
+      });
+    }
+
+    // Check if user can access this contact (owner or admin)
+    if (contact.owner._id.toString() !== req.user.id && req.user.role !== 'admin') {
       return res.status(404).json({
         success: false,
         error: 'Contact not found',
@@ -65,6 +76,7 @@ export const getContact = async (req, res, next) => {
 export const createContact = async (req, res, next) => {
   try {
     req.body.owner = req.user.id;
+    req.body.organization = req.user.organization;
     const contact = await Contact.create(req.body);
 
     // Create audit log
@@ -92,7 +104,10 @@ export const createContact = async (req, res, next) => {
 
 export const updateContact = async (req, res, next) => {
   try {
-    let contact = await Contact.findById(req.params.id);
+    let contact = await Contact.findOne({
+      _id: req.params.id,
+      organization: req.user.organization,
+    });
 
     if (!contact) {
       return res.status(404).json({
@@ -140,7 +155,10 @@ export const updateContact = async (req, res, next) => {
 
 export const deleteContact = async (req, res, next) => {
   try {
-    const contact = await Contact.findById(req.params.id);
+    const contact = await Contact.findOne({
+      _id: req.params.id,
+      organization: req.user.organization,
+    });
 
     if (!contact) {
       return res.status(404).json({

@@ -197,4 +197,26 @@ describe('Admin User Controller', () => {
       expect(response.status).toBe(400);
     });
   });
+
+  describe('GET /api/admin/users — organization isolation', () => {
+    it('should only return users from the same organization', async () => {
+      // Create a second org with its own user
+      const org2 = await Organization.create({ name: 'Org 2' });
+      await User.create({
+        name: 'Other Org User',
+        email: 'other@org2.com',
+        password: 'password123',
+        organization: org2._id,
+        role: 'user',
+      });
+
+      const response = await request(app)
+        .get('/api/admin/users')
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      expect(response.status).toBe(200);
+      const emails = response.body.data.map(u => u.email);
+      expect(emails).not.toContain('other@org2.com');
+    });
+  });
 });

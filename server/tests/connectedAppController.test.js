@@ -3,6 +3,7 @@ import mongoose from 'mongoose';
 import createApp from '../src/app.js';
 import User from '../src/models/User.js';
 import ConnectedApp from '../src/models/ConnectedApp.js';
+import ConnectedAppAuthorization from '../src/models/ConnectedAppAuthorization.js';
 import Organization from '../src/models/Organization.js';
 import { hashSecret } from '../src/utils/tokenUtils.js';
 
@@ -123,6 +124,31 @@ describe('Connected App Controller', () => {
 
       const deleted = await ConnectedApp.findById(appDoc._id);
       expect(deleted.isActive).toBe(false);
+    });
+  });
+
+  describe('API key app creates authorization record', () => {
+    it('should create a ConnectedAppAuthorization record when creating an API key app', async () => {
+      const response = await request(app)
+        .post('/api/admin/connected-apps')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({
+          name: 'My API Key App',
+          description: 'Test',
+          authType: 'apikey',
+          scopes: ['accounts:read'],
+        });
+
+      expect(response.status).toBe(201);
+      expect(response.body.data.apiKey).toBeDefined();
+
+      // Verify authorization record was created
+      const auth = await ConnectedAppAuthorization.findOne({
+        connectedApp: response.body.data._id,
+        isApiKey: true,
+      });
+      expect(auth).not.toBeNull();
+      expect(auth.grantedScopes).toContain('accounts:read');
     });
   });
 

@@ -3,7 +3,7 @@ import CustomField from '../models/CustomField.js';
 
 export const getCustomObjects = async (req, res, next) => {
   try {
-    const objects = await CustomObject.find().sort({ name: 1 });
+    const objects = await CustomObject.find({ organization: req.user.organization }).sort({ name: 1 });
 
     // Get field counts for each object
     const objectsWithFields = await Promise.all(
@@ -27,7 +27,10 @@ export const getCustomObjects = async (req, res, next) => {
 
 export const getCustomObject = async (req, res, next) => {
   try {
-    const object = await CustomObject.findById(req.params.id);
+    const object = await CustomObject.findOne({
+      _id: req.params.id,
+      organization: req.user.organization,
+    });
 
     if (!object) {
       return res.status(404).json({
@@ -54,8 +57,11 @@ export const createCustomObject = async (req, res, next) => {
   try {
     const { name, label, pluralLabel, description, icon, color, enableActivities, enableTasks, enableReports } = req.body;
 
-    // Check if object with same name exists
-    const existing = await CustomObject.findOne({ name });
+    // Check if object with same name exists in this organization
+    const existing = await CustomObject.findOne({
+      name,
+      organization: req.user.organization,
+    });
     if (existing) {
       return res.status(400).json({
         success: false,
@@ -73,6 +79,7 @@ export const createCustomObject = async (req, res, next) => {
       enableActivities,
       enableTasks,
       enableReports,
+      organization: req.user.organization,
     });
 
     // Create default name field
@@ -98,7 +105,10 @@ export const updateCustomObject = async (req, res, next) => {
   try {
     const { label, pluralLabel, description, icon, color, enableActivities, enableTasks, enableReports, active } = req.body;
 
-    let object = await CustomObject.findById(req.params.id);
+    let object = await CustomObject.findOne({
+      _id: req.params.id,
+      organization: req.user.organization,
+    });
 
     if (!object) {
       return res.status(404).json({
@@ -131,7 +141,10 @@ export const updateCustomObject = async (req, res, next) => {
 
 export const deleteCustomObject = async (req, res, next) => {
   try {
-    const object = await CustomObject.findById(req.params.id);
+    const object = await CustomObject.findOne({
+      _id: req.params.id,
+      organization: req.user.organization,
+    });
 
     if (!object) {
       return res.status(404).json({

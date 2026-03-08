@@ -56,13 +56,24 @@ export const getTasks = async (req, res, next) => {
 
 export const getTask = async (req, res, next) => {
   try {
-    const task = await Task.findById(req.params.id)
+    const task = await Task.findOne({
+      _id: req.params.id,
+      organization: req.user.organization,
+    })
       .populate('owner', 'name email')
       .populate('contact', 'firstName lastName email phone')
       .populate('account', 'name industry')
       .populate('opportunity', 'name stage amount');
 
     if (!task) {
+      return res.status(404).json({
+        success: false,
+        error: 'Task not found',
+      });
+    }
+
+    // Check if user can access this task (owner or admin)
+    if (task.owner._id.toString() !== req.user.id && req.user.role !== 'admin') {
       return res.status(404).json({
         success: false,
         error: 'Task not found',
@@ -81,6 +92,7 @@ export const getTask = async (req, res, next) => {
 export const createTask = async (req, res, next) => {
   try {
     req.body.owner = req.user.id;
+    req.body.organization = req.user.organization;
     const task = await Task.create(req.body);
 
     res.status(201).json({
@@ -94,7 +106,10 @@ export const createTask = async (req, res, next) => {
 
 export const updateTask = async (req, res, next) => {
   try {
-    let task = await Task.findById(req.params.id);
+    let task = await Task.findOne({
+      _id: req.params.id,
+      organization: req.user.organization,
+    });
 
     if (!task) {
       return res.status(404).json({
@@ -126,7 +141,10 @@ export const updateTask = async (req, res, next) => {
 
 export const deleteTask = async (req, res, next) => {
   try {
-    const task = await Task.findById(req.params.id);
+    const task = await Task.findOne({
+      _id: req.params.id,
+      organization: req.user.organization,
+    });
 
     if (!task) {
       return res.status(404).json({

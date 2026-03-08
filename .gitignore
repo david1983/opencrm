@@ -3,4 +3,6 @@
 node_modules
 server/coverage*
 client/coverage*
+docs/plans
 docs/plans.worktrees
+docs*

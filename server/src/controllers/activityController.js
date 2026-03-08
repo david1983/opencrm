@@ -52,13 +52,24 @@ export const getActivities = async (req, res, next) => {
 
 export const getActivity = async (req, res, next) => {
   try {
-    const activity = await Activity.findById(req.params.id)
+    const activity = await Activity.findOne({
+      _id: req.params.id,
+      organization: req.user.organization,
+    })
       .populate('owner', 'name email')
       .populate('contact', 'firstName lastName email phone')
       .populate('account', 'name industry')
       .populate('opportunity', 'name stage amount');
 
     if (!activity) {
+      return res.status(404).json({
+        success: false,
+        error: 'Activity not found',
+      });
+    }
+
+    // Check if user can access this activity (owner or admin)
+    if (activity.owner._id.toString() !== req.user.id && req.user.role !== 'admin') {
       return res.status(404).json({
         success: false,
         error: 'Activity not found',
@@ -77,6 +88,7 @@ export const getActivity = async (req, res, next) => {
 export const createActivity = async (req, res, next) => {
   try {
     req.body.owner = req.user.id;
+    req.body.organization = req.user.organization;
     const activity = await Activity.create(req.body);
 
     res.status(201).json({
@@ -90,7 +102,10 @@ export const createActivity = async (req, res, next) => {
 
 export const updateActivity = async (req, res, next) => {
   try {
-    let activity = await Activity.findById(req.params.id);
+    let activity = await Activity.findOne({
+      _id: req.params.id,
+      organization: req.user.organization,
+    });
 
     if (!activity) {
       return res.status(404).json({
@@ -122,7 +137,10 @@ export const updateActivity = async (req, res, next) => {
 
 export const deleteActivity = async (req, res, next) => {
   try {
-    const activity = await Activity.findById(req.params.id);
+    const activity = await Activity.findOne({
+      _id: req.params.id,
+      organization: req.user.organization,
+    });
 
     if (!activity) {
       return res.status(404).json({

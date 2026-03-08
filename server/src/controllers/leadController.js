@@ -45,9 +45,20 @@ export const getLeads = async (req, res, next) => {
 
 export const getLead = async (req, res, next) => {
   try {
-    const lead = await Lead.findById(req.params.id).populate('owner', 'name email');
+    const lead = await Lead.findOne({
+      _id: req.params.id,
+      organization: req.user.organization,
+    }).populate('owner', 'name email');
 
     if (!lead) {
+      return res.status(404).json({
+        success: false,
+        error: 'Lead not found',
+      });
+    }
+
+    // Check if user can access this lead (owner or admin)
+    if (lead.owner._id.toString() !== req.user.id && req.user.role !== 'admin') {
       return res.status(404).json({
         success: false,
         error: 'Lead not found',
@@ -66,6 +77,7 @@ export const getLead = async (req, res, next) => {
 export const createLead = async (req, res, next) => {
   try {
     req.body.owner = req.user.id;
+    req.body.organization = req.user.organization;
     const lead = await Lead.create(req.body);
 
     // Create audit log
@@ -93,7 +105,10 @@ export const createLead = async (req, res, next) => {
 
 export const updateLead = async (req, res, next) => {
   try {
-    let lead = await Lead.findById(req.params.id);
+    let lead = await Lead.findOne({
+      _id: req.params.id,
+      organization: req.user.organization,
+    });
 
     if (!lead) {
       return res.status(404).json({
@@ -141,7 +156,10 @@ export const updateLead = async (req, res, next) => {
 
 export const deleteLead = async (req, res, next) => {
   try {
-    const lead = await Lead.findById(req.params.id);
+    const lead = await Lead.findOne({
+      _id: req.params.id,
+      organization: req.user.organization,
+    });
 
     if (!lead) {
       return res.status(404).json({
@@ -180,26 +198,50 @@ export const deleteLead = async (req, res, next) => {
 
 export const convertLead = async (req, res, next) => {
   try {
-    const lead = await Lead.findById(req.params.id);
+    // First, check authorization
+    const existingLead = await Lead.findOne({
+      _id: req.params.id,
+      organization: req.user.organization,
+    }).populate('owner', 'name email');
 
-    if (!lead) {
+    if (!existingLead) {
       return res.status(404).json({
         success: false,
         error: 'Lead not found',
       });
     }
 
-    if (lead.owner.toString() !== req.user.id && req.user.role !== 'admin') {
+    if (existingLead.owner._id.toString() !== req.user.id && req.user.role !== 'admin') {
       return res.status(403).json({
         success: false,
         error: 'Not authorized to convert this lead',
       });
     }
 
-    if (lead.status === 'Converted') {
+    if (existingLead.status === 'Converted') {
       return res.status(400).json({
         success: false,
         error: 'Lead has already been converted',
+      });
+    }
+
+    // Atomic check-and-update to prevent race conditions
+    // Only allow conversion if status is not already 'Converted' or 'Converting'
+    const originalStatus = existingLead.status;
+    const lead = await Lead.findOneAndUpdate(
+      {
+        _id: req.params.id,
+        organization: req.user.organization,
+        status: { $nin: ['Converted', 'Converting'] },
+      },
+      { status: 'Converting' },
+      { new: true }
+    ).populate('owner', 'name email');
+
+    if (!lead) {
+      return res.status(400).json({
+        success: false,
+        error: 'Lead is already being converted by another request',
       });
     }
 
@@ -214,107 +256,116 @@ export const convertLead = async (req, res, next) => {
     let contact = null;
     let opportunity = null;
 
-    // Create or use existing account
-    if (createAccount && accountName) {
-      account = await Account.create({
-        name: accountName,
-        industry: lead.industry || 'Other',
-        website: lead.website || '',
-        phone: lead.phone || '',
+    try {
+      // Create or use existing account
+      if (createAccount && accountName) {
+        account = await Account.create({
+          name: accountName,
+          industry: lead.industry || 'Other',
+          website: lead.website || '',
+          phone: lead.phone || '',
+          owner: req.user.id,
+          organization: req.user.organization,
+        });
+
+        // Create audit log for new account
+        await createAuditLog({
+          entityType: 'Account',
+          entityId: account._id,
+          action: 'create',
+          changes: [{ field: 'name', oldValue: null, newValue: accountName }],
+          userId: req.user.id,
+          organizationId: req.user.organization,
+        });
+      }
+
+      // Create contact
+      contact = await Contact.create({
+        firstName: lead.firstName,
+        lastName: lead.lastName,
+        email: lead.email,
+        phone: lead.phone,
+        title: lead.title,
+        account: account?._id || null,
         owner: req.user.id,
+        organization: req.user.organization,
+        leadSource: lead.source,
       });
 
-      // Create audit log for new account
+      // Create audit log for new contact
       await createAuditLog({
-        entityType: 'Account',
-        entityId: account._id,
+        entityType: 'Contact',
+        entityId: contact._id,
         action: 'create',
-        changes: [{ field: 'name', oldValue: null, newValue: accountName }],
+        changes: [
+          { field: 'firstName', oldValue: null, newValue: lead.firstName },
+          { field: 'lastName', oldValue: null, newValue: lead.lastName },
+        ],
         userId: req.user.id,
         organizationId: req.user.organization,
       });
-    }
 
-    // Create contact
-    contact = await Contact.create({
-      firstName: lead.firstName,
-      lastName: lead.lastName,
-      email: lead.email,
-      phone: lead.phone,
-      title: lead.title,
-      account: account?._id || null,
-      owner: req.user.id,
-      leadSource: lead.source,
-    });
+      // Create opportunity if requested
+      if (createOpportunity && opportunityName && account) {
+        opportunity = await Opportunity.create({
+          name: opportunityName,
+          account: account._id,
+          stage: 'Prospecting',
+          probability: 10,
+          amount: 0,
+          closeDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
+          owner: req.user.id,
+          organization: req.user.organization,
+        });
 
-    // Create audit log for new contact
-    await createAuditLog({
-      entityType: 'Contact',
-      entityId: contact._id,
-      action: 'create',
-      changes: [
-        { field: 'firstName', oldValue: null, newValue: lead.firstName },
-        { field: 'lastName', oldValue: null, newValue: lead.lastName },
-      ],
-      userId: req.user.id,
-      organizationId: req.user.organization,
-    });
+        // Create audit log for new opportunity
+        await createAuditLog({
+          entityType: 'Opportunity',
+          entityId: opportunity._id,
+          action: 'create',
+          changes: [{ field: 'name', oldValue: null, newValue: opportunityName }],
+          userId: req.user.id,
+          organizationId: req.user.organization,
+        });
+      }
 
-    // Create opportunity if requested
-    if (createOpportunity && opportunityName && account) {
-      opportunity = await Opportunity.create({
-        name: opportunityName,
-        account: account._id,
-        stage: 'Prospecting',
-        probability: 10,
-        amount: 0,
-        closeDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
-        owner: req.user.id,
-      });
+      // Update lead status to Converted
+      const oldLead = lead.toObject();
+      lead.status = 'Converted';
+      lead.convertedAt = new Date();
+      lead.convertedTo = {
+        account: account?._id,
+        contact: contact._id,
+        opportunity: opportunity?._id,
+      };
+      await lead.save();
 
-      // Create audit log for new opportunity
+      // Create audit log for lead conversion
       await createAuditLog({
-        entityType: 'Opportunity',
-        entityId: opportunity._id,
-        action: 'create',
-        changes: [{ field: 'name', oldValue: null, newValue: opportunityName }],
+        entityType: 'Lead',
+        entityId: lead._id,
+        action: 'convert',
+        changes: [
+          { field: 'status', oldValue: oldLead.status, newValue: 'Converted' },
+        ],
         userId: req.user.id,
         organizationId: req.user.organization,
       });
+
+      res.status(200).json({
+        success: true,
+        data: {
+          lead,
+          account,
+          contact,
+          opportunity,
+        },
+      });
+    } catch (conversionError) {
+      // Revert lead status if conversion fails
+      await Lead.findByIdAndUpdate(lead._id, { status: originalStatus });
+      throw conversionError;
     }
-
-    // Update lead status to Converted
-    const oldLead = lead.toObject();
-    lead.status = 'Converted';
-    lead.convertedAt = new Date();
-    lead.convertedTo = {
-      account: account?._id,
-      contact: contact._id,
-      opportunity: opportunity?._id,
-    };
-    await lead.save();
-
-    // Create audit log for lead conversion
-    await createAuditLog({
-      entityType: 'Lead',
-      entityId: lead._id,
-      action: 'convert',
-      changes: [
-        { field: 'status', oldValue: oldLead.status, newValue: 'Converted' },
-      ],
-      userId: req.user.id,
-      organizationId: req.user.organization,
-    });
-
-    res.status(200).json({
-      success: true,
-      data: {
-        lead,
-        account,
-        contact,
-        opportunity,
-      },
-    });
   } catch (error) {
     next(error);
   }
